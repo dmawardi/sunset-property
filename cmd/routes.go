@@ -16,11 +16,13 @@ type Api interface {
 }
 
 type api struct {
-	user controller.UserController
+	user     controller.UserController
+	property controller.PropertyController
+	feature  controller.FeatureController
 }
 
-func NewApi(user controller.UserController) Api {
-	return &api{user}
+func NewApi(user controller.UserController, property controller.PropertyController, feature controller.FeatureController) Api {
+	return &api{user, property, feature}
 }
 
 func (a api) routes() http.Handler {
@@ -57,6 +59,20 @@ func (a api) routes() http.Handler {
 			mux.Get("/api/me", a.user.GetMyUserDetails)
 			mux.Post("/api/me", controller.HealthCheck)
 			mux.Put("/api/me", a.user.UpdateMyProfile)
+
+			// properties
+			mux.Post("/api/properties", a.property.Create)
+			mux.Get("/api/properties", a.property.FindAll)
+			mux.Get("/api/properties/{id}", a.property.Find)
+			mux.Put("/api/properties/{id}", a.property.Update)
+			mux.Delete("/api/properties/{id}", a.property.Delete)
+
+			// Property features
+			mux.Post("/api/features", a.feature.Create)
+			mux.Get("/api/features", a.feature.FindAll)
+			mux.Get("/api/features/{id}", a.feature.Find)
+			mux.Put("/api/features/{id}", a.feature.Update)
+			mux.Delete("/api/features/{id}", a.feature.Delete)
 
 		})
 

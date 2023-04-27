@@ -39,4 +39,58 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/users", action: "delete",
 	},
+	// api/properties
+	// admin
+	{
+		subject: "admin", object: "/api/properties", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/properties", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/properties", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/properties", action: "delete",
+	},
+	// user
+	{
+		subject: "user", object: "/api/properties", action: "create",
+	},
+	{
+		subject: "user", object: "/api/properties", action: "read",
+	},
+	{
+		subject: "user", object: "/api/properties", action: "update",
+	},
+	{
+		subject: "user", object: "/api/properties", action: "delete",
+	},
+	// api/features
+	// admin
+	{
+		subject: "admin", object: "/api/features", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/features", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/features", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/features", action: "delete",
+	},
+	// user
+	{
+		subject: "user", object: "/api/features", action: "create",
+	},
+	{
+		subject: "user", object: "/api/features", action: "read",
+	},
+	{
+		subject: "user", object: "/api/features", action: "update",
+	},
+	{
+		subject: "user", object: "/api/features", action: "delete",
+	},
 }
