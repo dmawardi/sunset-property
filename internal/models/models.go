@@ -14,3 +14,7 @@ type Login struct {
 type ValidationError struct {
 	Validation_errors map[string][]string `json:"validation_errors"`
 }
+
+type FindUpdateParameters struct {
+	ID string `valid:"numeric"`
+}

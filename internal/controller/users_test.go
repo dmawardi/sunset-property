@@ -192,6 +192,42 @@ func TestUserController_FindAll(t *testing.T) {
 			}
 		}
 	}
+
+	// Test for parameters
+	var failParameterTests = []struct {
+		limit                  string
+		offset                 string
+		order                  string
+		expectedResponseStatus int
+	}{
+		// Bad order by
+		{limit: "10", offset: "", order: "none", expectedResponseStatus: http.StatusBadRequest},
+		// No limit should result in bad request
+		{limit: "", offset: "", order: "", expectedResponseStatus: http.StatusBadRequest},
+		// Check normal parameters functional with order by
+		{limit: "20", offset: "1", order: "ID ASC", expectedResponseStatus: http.StatusOK},
+	}
+	for _, v := range failParameterTests {
+		request := fmt.Sprintf("/api/users?limit=%v&offset=%v&order=%v", v.limit, v.offset, v.order)
+		// Create a new request
+		req, err := http.NewRequest("GET", request, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Add auth token to header
+		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+		// Create a response recorder
+		rr := httptest.NewRecorder()
+
+		// Use handler with recorder and created request
+		testConnection.router.ServeHTTP(rr, req)
+
+		// Check the response status code
+		if status := rr.Code; status != v.expectedResponseStatus {
+			t.Errorf("handler returned wrong status code: got %v want %v",
+				status, v.expectedResponseStatus)
+		}
+	}
 }
 
 func TestUserController_Delete(t *testing.T) {
@@ -298,7 +334,7 @@ func TestUserController_Update(t *testing.T) {
 		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", v.tokenToUse))
 		// Send update request to mock server
 		testConnection.router.ServeHTTP(rr, req)
-		// Check response is failed for normal user to update another
+		// Check response expected vs received
 		if status := rr.Code; status != v.expectedResponseStatus {
 			t.Errorf("User update test: got %v want %v.",
 				status, v.expectedResponseStatus)
@@ -311,6 +347,40 @@ func TestUserController_Update(t *testing.T) {
 
 			// Check user details using updated object
 			checkUserDetails(rr, createdUser, t, true)
+		}
+	}
+
+	// Check for failure if incorrect ID parameter detected
+	//
+	var failUpdateTests = []struct {
+		urlExtension           string
+		expectedResponseStatus int
+	}{
+		// alpha character instead
+		{urlExtension: "x", expectedResponseStatus: http.StatusForbidden},
+		// Index out of bounds
+		{urlExtension: "9", expectedResponseStatus: http.StatusBadRequest},
+	}
+
+	for _, v := range failUpdateTests {
+		// Make new request with user update in body
+		req, err := http.NewRequest("PUT", fmt.Sprint("/api/users/"+v.urlExtension), buildReqBody(&db.User{
+			Username: "Scrappy Kid",
+		}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Create a response recorder
+		rr := httptest.NewRecorder()
+		// Add user auth token to header
+		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+
+		// Send update request to mock server
+		testConnection.router.ServeHTTP(rr, req)
+		// Check response is forbidden for
+		if status := rr.Code; status != v.expectedResponseStatus {
+			t.Errorf("User update test: got %v want %v.",
+				status, v.expectedResponseStatus)
 		}
 	}
 

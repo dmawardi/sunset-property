@@ -78,7 +78,7 @@ func (s *userService) FindByEmail(email string) (*db.User, error) {
 	user, err := s.repo.FindByEmail(email)
 	// If error detected
 	if err != nil {
-		fmt.Printf("error found in Find by email: %v", err)
+		fmt.Printf("Failed to find user: %v\n", err)
 		return nil, err
 	}
 	// else

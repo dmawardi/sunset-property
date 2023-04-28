@@ -171,7 +171,8 @@ func (c userController) Create(w http.ResponseWriter, r *http.Request) {
 // @Router       /users/{id} [put]
 // @Security BearerToken
 func (c userController) Update(w http.ResponseWriter, r *http.Request) {
-	// grab id parameter
+	// Extract body
+	//
 	var user models.UpdateUser
 	// Decode request body as JSON and store in login
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -179,8 +180,20 @@ func (c userController) Update(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Decoding error: ", err)
 	}
 
-	// Validate the incoming DTO
+	// Grab URL parameter
+	//
+	stringParameter := chi.URLParam(r, "id")
+	// Convert to int
+	idParameter, err := strconv.Atoi(stringParameter)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed user update: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	// Validate parameters
 	pass, valErrors := helpers.GoValidateStruct(&user)
+	fmt.Printf("Pass: %v\nVal errors: %v", pass, valErrors)
+
 	// If failure detected
 	if !pass {
 		// Write bad request header
@@ -191,15 +204,10 @@ func (c userController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	// else, validation passes and allow through
 
-	// Grab URL parameter
-	stringParameter := chi.URLParam(r, "id")
-	// Convert to int
-	idParameter, _ := strconv.Atoi(stringParameter)
-
 	// Update user
-	updatedUser, createErr := c.service.Update(idParameter, &user)
-	if createErr != nil {
-		http.Error(w, fmt.Sprintf("Failed user update: %s", createErr), http.StatusBadRequest)
+	updatedUser, err := c.service.Update(idParameter, &user)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed user update: %s", err), http.StatusBadRequest)
 		return
 	}
 	// Write user to output
