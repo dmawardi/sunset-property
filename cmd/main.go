@@ -15,6 +15,7 @@ import (
 	"github.com/dmawardi/Go-Template/internal/controller"
 	"github.com/dmawardi/Go-Template/internal/db"
 	"github.com/dmawardi/Go-Template/internal/repository"
+	"github.com/dmawardi/Go-Template/internal/routes"
 	"github.com/dmawardi/Go-Template/internal/service"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -85,7 +86,7 @@ func main() {
 	// Server settings
 	srv := &http.Server{
 		Addr:    portNumber,
-		Handler: api.routes(),
+		Handler: api.Routes(),
 	}
 
 	// Listen and serve using server settings above
@@ -96,7 +97,7 @@ func main() {
 	}
 }
 
-func ApiSetup(client *gorm.DB) Api {
+func ApiSetup(client *gorm.DB) routes.Api {
 	// user
 	userRepo := repository.NewUserRepository(client)
 	userService := service.NewUserService(userRepo)
@@ -113,6 +114,6 @@ func ApiSetup(client *gorm.DB) Api {
 	featController := controller.NewFeatureController(featService)
 
 	// Build API using controllers
-	api := NewApi(userController, propController, featController)
+	api := routes.NewApi(userController, propController, featController)
 	return api
 }

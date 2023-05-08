@@ -1,83 +1,16 @@
 package controller_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/dmawardi/Go-Template/internal/auth"
-	"github.com/dmawardi/Go-Template/internal/config"
-	"github.com/dmawardi/Go-Template/internal/controller"
 	"github.com/dmawardi/Go-Template/internal/db"
 	"github.com/dmawardi/Go-Template/internal/helpers"
 	"github.com/dmawardi/Go-Template/internal/models"
-	"github.com/go-chi/chi"
-
-	"github.com/dmawardi/Go-Template/internal/repository"
-	"github.com/dmawardi/Go-Template/internal/service"
-
-	"github.com/glebarez/sqlite"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
-
-type testDbRepo struct {
-	dbClient *gorm.DB
-	repo     repository.UserRepository
-	serv     service.UserService
-	cont     controller.UserController
-	router   *chi.Mux
-	// For authentication mocking
-	admin      *db.User
-	adminToken string
-	user       *db.User
-	userToken  string
-}
-
-var testConnection testDbRepo
-
-var app config.AppConfig
-
-func init() {
-	testConnection.dbClient = setupDatabase()
-	// Create test modules
-	testConnection.repo = repository.NewUserRepository(testConnection.dbClient)
-	testConnection.serv = service.NewUserService(testConnection.repo)
-	testConnection.cont = controller.NewUserController(testConnection.serv)
-	// Create router
-	testConnection.router = buildRouter(testConnection.cont)
-
-	// Build admin user
-	adminUser, adminToken := generateUserWithRoleAndToken(
-		&db.User{
-			Username: "Jabar",
-			Email:    "juba@ymail.com",
-			Password: "password",
-			Name:     "Bamba",
-		}, "admin")
-	// Store credentials
-	testConnection.admin = adminUser
-	testConnection.adminToken = adminToken
-
-	// Build normal user
-	normalUser, userToken := generateUserWithRoleAndToken(
-		&db.User{
-			Username: "Jabar",
-			Email:    "Jabal@ymail.com",
-			Password: "password",
-			Name:     "Bamba",
-		}, "user")
-	// Store credentials
-	testConnection.user = normalUser
-	testConnection.userToken = userToken
-
-	// Setup the enforcer for usage as middleware
-	setupTestEnforcer(testConnection.dbClient)
-}
 
 func TestUserController_Find(t *testing.T) {
 	// Build test user
@@ -89,19 +22,19 @@ func TestUserController_Find(t *testing.T) {
 	}
 
 	// Create user
-	createdUser, err := hashPassAndGenerateUserInDb(userToCreate)
+	createdUser, err := testConnection.hashPassAndGenerateUserInDb(userToCreate)
 	if err != nil {
 		t.Fatalf("failed to create test user for find by id user service testr: %v", err)
 	}
 	// Create a request with an "id" URL parameter
 	requestUrl := fmt.Sprintf("/api/users/%v", createdUser.ID)
-	// t.Fatalf("for url: %v\n. Created user iD: %v\n", requestUrl, createdUser.ID)
+
 	req, err := http.NewRequest("GET", requestUrl, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// Add auth token to header
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.admin.token))
 	// Create a response recorder
 	rr := httptest.NewRecorder()
 
@@ -118,6 +51,7 @@ func TestUserController_Find(t *testing.T) {
 	var body db.User
 	json.Unmarshal(rr.Body.Bytes(), &body)
 
+	// checkUserDetails(rr, createdUser, t, false)
 	// Verify that the found user matches the original user
 	if body.ID != createdUser.ID {
 		t.Errorf("found createdUser has incorrect ID: expected %d, got %d", userToCreate.ID, body.ID)
@@ -133,7 +67,10 @@ func TestUserController_Find(t *testing.T) {
 	}
 
 	// Delete the created user
-	testConnection.dbClient.Delete(createdUser)
+	delResult := testConnection.dbClient.Delete(createdUser)
+	if delResult.Error != nil {
+		t.Fatalf("Error clearing created user")
+	}
 }
 
 func TestUserController_FindAll(t *testing.T) {
@@ -143,7 +80,7 @@ func TestUserController_FindAll(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Add auth token to header
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.admin.token))
 	// Create a response recorder
 	rr := httptest.NewRecorder()
 
@@ -168,32 +105,33 @@ func TestUserController_FindAll(t *testing.T) {
 	// Iterate through users array received
 	for _, item := range body {
 		// If id is admin id
-		if item.ID == testConnection.admin.ID {
+		if item.ID == testConnection.accounts.admin.details.ID {
 			// Check details
-			if item.Email != testConnection.admin.Email {
-				t.Errorf("found createdUser has incorrect email: expected %s, got %s", testConnection.admin.Email, item.Email)
+			if item.Email != testConnection.accounts.admin.details.Email {
+				t.Errorf("found createdUser has incorrect email: expected %s, got %s", testConnection.accounts.admin.details.Email, item.Email)
 			}
-			if item.Username != testConnection.admin.Username {
-				t.Errorf("found createdUser has incorrect username: expected %s, got %s", testConnection.admin.Username, item.Username)
+			if item.Username != testConnection.accounts.admin.details.Username {
+				t.Errorf("found createdUser has incorrect username: expected %s, got %s", testConnection.accounts.admin.details.Username, item.Username)
 			}
-			if item.Name != testConnection.admin.Name {
-				t.Errorf("found createdUser has incorrect name: expected %s, got %s", testConnection.admin.Name, item.Name)
+			if item.Name != testConnection.accounts.admin.details.Name {
+				t.Errorf("found createdUser has incorrect name: expected %s, got %s", testConnection.accounts.admin.details.Name, item.Name)
 			}
-		} else {
+			// Else if user id
+		} else if item.ID == testConnection.accounts.user.details.ID {
 			// Else check user details
-			if item.Email != testConnection.user.Email {
-				t.Errorf("found createdUser has incorrect email: expected %s, got %s", testConnection.user.Email, item.Email)
+			if item.Email != testConnection.accounts.user.details.Email {
+				t.Errorf("found createdUser has incorrect email: expected %s, got %s", testConnection.accounts.user.details.Email, item.Email)
 			}
-			if item.Username != testConnection.user.Username {
-				t.Errorf("found createdUser has incorrect username: expected %s, got %s", testConnection.user.Username, item.Username)
+			if item.Username != testConnection.accounts.user.details.Username {
+				t.Errorf("found createdUser has incorrect username: expected %s, got %s", testConnection.accounts.user.details.Username, item.Username)
 			}
-			if item.Name != testConnection.user.Name {
-				t.Errorf("found createdUser has incorrect name: expected %s, got %s", testConnection.user.Name, item.Name)
+			if item.Name != testConnection.accounts.user.details.Name {
+				t.Errorf("found createdUser has incorrect name: expected %s, got %s", testConnection.accounts.user.details.Name, item.Name)
 			}
 		}
 	}
 
-	// Test for parameters
+	// Test parameter input
 	var failParameterTests = []struct {
 		limit                  string
 		offset                 string
@@ -215,7 +153,7 @@ func TestUserController_FindAll(t *testing.T) {
 			t.Fatal(err)
 		}
 		// Add auth token to header
-		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.admin.token))
 		// Create a response recorder
 		rr := httptest.NewRecorder()
 
@@ -234,13 +172,13 @@ func TestUserController_Delete(t *testing.T) {
 	// Build test user for deletion
 	userToCreate := &db.User{
 		Username: "Jabar",
-		Email:    "greenie@ymail.com",
+		Email:    "swindle@ymail.com",
 		Password: "password",
 		Name:     "Bamba",
 	}
 
 	// Create user
-	createdUser, err := hashPassAndGenerateUserInDb(userToCreate)
+	createdUser, err := testConnection.hashPassAndGenerateUserInDb(userToCreate)
 	if err != nil {
 		t.Fatalf("failed to create test user for delete user controller test: %v", err)
 	}
@@ -255,7 +193,7 @@ func TestUserController_Delete(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// Add user auth token to header
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.userToken))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.user.token))
 	// Send deletion requestion to mock server
 	testConnection.router.ServeHTTP(rr, req)
 	// Check response is failed for normal user
@@ -269,7 +207,7 @@ func TestUserController_Delete(t *testing.T) {
 	rr = httptest.NewRecorder()
 
 	// Set replacement header with admin credentials
-	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.admin.token))
 	// Perform GET request to mock server (using admin token)
 	testConnection.router.ServeHTTP(rr, req)
 	// Check the response status code for user deletion success
@@ -289,21 +227,21 @@ func TestUserController_Update(t *testing.T) {
 		{map[string]string{
 			"Username": "JabarHindi",
 			"Name":     "Bambaloonie",
-		}, testConnection.userToken, http.StatusForbidden, false},
+		}, testConnection.accounts.user.token, http.StatusForbidden, false},
 		{map[string]string{
 			"Username": "JabarHindi",
 			"Name":     "Bambaloonie",
-		}, testConnection.adminToken, http.StatusOK, true},
+		}, testConnection.accounts.admin.token, http.StatusOK, true},
 		// Update should be disallowed due to being too short
 		{map[string]string{
 			"Username": "Gobod",
 			"Name":     "solu",
-		}, testConnection.adminToken, http.StatusBadRequest, false},
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false},
 		// User should be forbidden before validating
 		{map[string]string{
 			"Username": "Gobod",
 			"Name":     "solu",
-		}, testConnection.userToken, http.StatusForbidden, false},
+		}, testConnection.accounts.user.token, http.StatusForbidden, false},
 	}
 
 	// Build test user for update
@@ -314,7 +252,7 @@ func TestUserController_Update(t *testing.T) {
 		Name:     "Bambaliya",
 	}
 	// Create user
-	createdUser, err := hashPassAndGenerateUserInDb(userToCreate)
+	createdUser, err := testConnection.hashPassAndGenerateUserInDb(userToCreate)
 	if err != nil {
 		t.Fatalf("failed to create test user for delete user controller test: %v", err)
 	}
@@ -373,7 +311,7 @@ func TestUserController_Update(t *testing.T) {
 		// Create a response recorder
 		rr := httptest.NewRecorder()
 		// Add user auth token to header
-		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.adminToken))
+		req.Header.Set("Authorization", fmt.Sprintf("bearer %v", testConnection.accounts.admin.token))
 
 		// Send update request to mock server
 		testConnection.router.ServeHTTP(rr, req)
@@ -385,7 +323,10 @@ func TestUserController_Update(t *testing.T) {
 	}
 
 	// Delete the created user
-	testConnection.dbClient.Delete(createdUser)
+	delResult := testConnection.dbClient.Delete(createdUser)
+	if delResult.Error != nil {
+		t.Fatalf("Error clearing created user")
+	}
 }
 
 func TestUserController_Create(t *testing.T) {
@@ -445,7 +386,7 @@ func TestUserController_Create(t *testing.T) {
 		// Check response is failed for normal user to update another
 		if status := rr.Code; status != v.expectedResponseStatus {
 
-			t.Errorf("User update test (%v): got %v want %v.", v.data.Name,
+			t.Errorf("User Create test (%v): got %v want %v.", v.data.Name,
 				status, v.expectedResponseStatus)
 		}
 
@@ -455,7 +396,10 @@ func TestUserController_Create(t *testing.T) {
 		json.Unmarshal(rr.Body.Bytes(), &body)
 
 		// Delete the created user
-		testConnection.serv.Delete(int(body.ID))
+		delError := testConnection.users.serv.Delete(int(body.ID))
+		if delError != nil {
+			t.Fatalf("Error clearing created user")
+		}
 	}
 }
 
@@ -466,8 +410,8 @@ func TestUserController_GetMyUserDetails(t *testing.T) {
 		userToCheck            db.User
 		expectedResponseStatus int
 	}{
-		{true, testConnection.userToken, *testConnection.user, http.StatusOK},
-		{true, testConnection.adminToken, *testConnection.admin, http.StatusOK},
+		{true, testConnection.accounts.user.token, *testConnection.accounts.user.details, http.StatusOK},
+		{true, testConnection.accounts.admin.token, *testConnection.accounts.admin.details, http.StatusOK},
 		// Deny access to user that doesn't have authentication
 		{false, "", db.User{}, http.StatusForbidden},
 	}
@@ -504,7 +448,6 @@ func TestUserController_GetMyUserDetails(t *testing.T) {
 	}
 }
 
-// Note: This must be the final test as it updates details within the test connection
 func TestUserController_UpdateMyProfile(t *testing.T) {
 	var updateTests = []struct {
 		data                   map[string]string
@@ -517,36 +460,37 @@ func TestUserController_UpdateMyProfile(t *testing.T) {
 		{map[string]string{
 			"Username": "JabarCindi",
 			"Name":     "Bambaloonie",
-		}, testConnection.adminToken, http.StatusOK, true, *testConnection.admin},
+		}, testConnection.accounts.admin.token, http.StatusOK, true, *testConnection.accounts.admin.details},
 		// User test
 		{map[string]string{
 			"Username": "JabarHindi",
 			"Name":     "Bambaloonie",
 			"Password": "YeezusChris",
-		}, testConnection.userToken, http.StatusOK, true, *testConnection.user},
+		}, testConnection.accounts.user.token, http.StatusOK, true, *testConnection.accounts.user.details},
 		// User update Email with non-email
 		{map[string]string{
 			"Email": "JabarHindi",
-		}, testConnection.userToken, http.StatusBadRequest, false, *testConnection.user},
+		}, testConnection.accounts.user.token, http.StatusBadRequest, false, *testConnection.accounts.user.details},
 		// User update Email with duplicate email
 		{map[string]string{
-			"Email": "juba@ymail.com",
-		}, testConnection.userToken, http.StatusBadRequest, false, *testConnection.user},
+			"Username": "Swahili",
+			"Email":    testConnection.accounts.admin.details.Email,
+		}, testConnection.accounts.user.token, http.StatusBadRequest, false, *testConnection.accounts.user.details},
 		// User updates without token should fail
 		{map[string]string{
 			"Username": "JabarHindi",
 			"Name":     "Bambaloonie",
 			"Password": "YeezusChris",
-		}, "", http.StatusForbidden, false, *testConnection.user},
+		}, "", http.StatusForbidden, false, *testConnection.accounts.user.details},
 		// Update for 2 tests below should be disallowed due to being too short
 		{map[string]string{
 			"Username": "Gobod",
 			"Name":     "solu",
-		}, testConnection.adminToken, http.StatusBadRequest, false, *testConnection.admin},
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, *testConnection.accounts.admin.details},
 		{map[string]string{
 			"Username": "Gabor",
 			"Name":     "solu",
-		}, testConnection.userToken, http.StatusBadRequest, false, *testConnection.user},
+		}, testConnection.accounts.user.token, http.StatusBadRequest, false, *testConnection.accounts.user.details},
 	}
 
 	// Create a request url with an "id" URL parameter
@@ -580,17 +524,17 @@ func TestUserController_UpdateMyProfile(t *testing.T) {
 		}
 
 		// Return updates to original state
-		testConnection.serv.Update(int(testConnection.admin.ID), &models.UpdateUser{
-			Username: testConnection.admin.Username,
-			Password: testConnection.admin.Password,
-			Email:    testConnection.admin.Email,
-			Name:     testConnection.admin.Name,
+		testConnection.users.serv.Update(int(testConnection.accounts.admin.details.ID), &models.UpdateUser{
+			Username: testConnection.accounts.admin.details.Username,
+			Password: testConnection.accounts.admin.details.Password,
+			Email:    testConnection.accounts.admin.details.Email,
+			Name:     testConnection.accounts.admin.details.Name,
 		})
-		testConnection.serv.Update(int(testConnection.user.ID), &models.UpdateUser{
-			Username: testConnection.user.Username,
-			Password: testConnection.user.Password,
-			Email:    testConnection.user.Email,
-			Name:     testConnection.user.Name,
+		testConnection.users.serv.Update(int(testConnection.accounts.user.details.ID), &models.UpdateUser{
+			Username: testConnection.accounts.user.details.Username,
+			Password: testConnection.accounts.user.details.Password,
+			Email:    testConnection.accounts.user.details.Email,
+			Name:     testConnection.accounts.user.details.Name,
 		})
 	}
 }
@@ -605,22 +549,22 @@ func TestUserController_Login(t *testing.T) {
 	}{
 		// Admin user login
 		{"Admin user login", models.Login{
-			Email:    testConnection.admin.Email,
-			Password: testConnection.admin.Password,
+			Email:    testConnection.accounts.admin.details.Email,
+			Password: testConnection.accounts.admin.details.Password,
 		}, http.StatusOK, false, ""},
 		// Admin user incorrect login
 		{"Admin user incorrect", models.Login{
-			Email:    testConnection.admin.Email,
+			Email:    testConnection.accounts.admin.details.Email,
 			Password: "wrongPassword",
 		}, http.StatusUnauthorized, true, "Incorrect username/password\n"},
 		// Basic user login
 		{"Basic user login", models.Login{
-			Email:    testConnection.user.Email,
-			Password: testConnection.user.Password,
+			Email:    testConnection.accounts.user.details.Email,
+			Password: testConnection.accounts.user.details.Password,
 		}, http.StatusOK, false, ""},
 		// Basic user incorrect login
 		{"Basic user incorrect", models.Login{
-			Email:    testConnection.user.Email,
+			Email:    testConnection.accounts.user.details.Email,
 			Password: "VeryWrongPassword",
 		}, http.StatusUnauthorized, true, "Incorrect username/password\n"},
 		// Completely made up email for user login
@@ -660,7 +604,7 @@ func TestUserController_Login(t *testing.T) {
 
 		// Check response is failed for normal user to update another
 		if status := rr.Code; status != v.expectedResponseStatus {
-			t.Errorf("User login test (%v:%v): got %v want %v. Resp: %v", v.title, v.data.Password,
+			t.Errorf("User login test (%v)\nDetails: %v/%v. got %v want %v. Resp: %v", v.title, v.data.Email, v.data.Password,
 				status, v.expectedResponseStatus, rr.Body)
 		}
 
@@ -714,125 +658,4 @@ func checkUserDetails(rr *httptest.ResponseRecorder, createdUser *db.User, t *te
 	if body.Name != createdUser.Name {
 		t.Errorf("found createdUser has incorrect name: expected %s, got %s", createdUser.Name, body.Name)
 	}
-}
-
-// Build a struct object to a type of bytes.reader to fulfill io.reader interface
-func buildReqBody(data interface{}) *bytes.Reader {
-	// Marshal to JSON
-	marshalled, err := json.Marshal(data)
-	if err != nil {
-		log.Fatal("Failed to marshal JSON")
-	}
-	// Make into reader
-	readerReqBody := bytes.NewReader(marshalled)
-	return readerReqBody
-}
-
-// SETUP FUNCTIONS
-//
-// Setup enforcer and sync app state
-func setupTestEnforcer(dbClient *gorm.DB) {
-	// Build enforcer
-	enforcer, err := auth.EnforcerSetup(dbClient)
-	if err != nil {
-		fmt.Println("Error building enforcer")
-	}
-
-	// Assign values in app for authentication
-	app.DbClient = dbClient
-	app.RBEnforcer = enforcer
-	// Sync app in authentication package for usage in authentication functions
-	auth.SetStateInAuth(&app)
-}
-
-// Build api router for testing
-func buildRouter(c controller.UserController) *chi.Mux {
-	// Create a new chi router
-	r := chi.NewRouter()
-
-	r.Group(func(r chi.Router) {
-
-		// Login
-		r.Post("/api/users/login", c.Login)
-
-		// Create new user
-		r.Post("/api/users", c.Create)
-
-		r.Group(func(r chi.Router) {
-			r.Use(auth.AuthenticateJWT)
-
-			// users
-			r.Get("/api/users", c.FindAll)
-			r.Get("/api/users/{id}", c.Find)
-			r.Put("/api/users/{id}", c.Update)
-			r.Delete("/api/users/{id}", c.Delete)
-
-			// My profile
-			r.Get("/api/me", c.GetMyUserDetails)
-			r.Put("/api/me", c.UpdateMyProfile)
-
-		})
-	})
-	return r
-}
-
-// setup database connection
-func setupDatabase() *gorm.DB {
-	// Open a new, temporary database for testing
-	dbClient, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
-	if err != nil {
-		fmt.Errorf("failed to open database: %v", err)
-	}
-
-	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}); err != nil {
-		fmt.Errorf("failed to migrate database schema: %v", err)
-	}
-
-	return dbClient
-}
-
-// Generates a new user, changes its role to admin and returns it with token
-func generateUserWithRoleAndToken(user *db.User, role string) (*db.User, string) {
-	unhashedPass := user.Password
-	createdUser, err := hashPassAndGenerateUserInDb(user)
-	if err != nil {
-		fmt.Print("Problem creating admin user for tests.")
-	}
-	// Update user to admin
-	createdUser.Role = role
-	updatedUser, err := testConnection.repo.Update(int(createdUser.ID), createdUser)
-	// If match found (no errors)
-	if err == nil {
-		fmt.Println("Generating token for: ", updatedUser.Email)
-		// Set login status to true
-		tokenString, err := auth.GenerateJWT(int(updatedUser.ID), updatedUser.Email, updatedUser.Role)
-		if err != nil {
-			fmt.Println("Failed to create JWT")
-		}
-
-		// Add unhashed password to returned object
-		updatedUser.Password = unhashedPass
-		// Send to user in body
-		return updatedUser, tokenString
-	}
-	return nil, ""
-}
-
-// Test helper function: Hashes password and generates a new user in the database
-func hashPassAndGenerateUserInDb(user *db.User) (*db.User, error) {
-	// Hash password
-	hashedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), 10)
-	if err != nil {
-		fmt.Print("Couldn't hash password")
-	}
-	user.Password = string(hashedPass)
-
-	// Create user
-	createResult := testConnection.dbClient.Create(user)
-	if createResult.Error != nil {
-		fmt.Printf("Couldn't create user: %v", user.Email)
-	}
-
-	return user, nil
 }

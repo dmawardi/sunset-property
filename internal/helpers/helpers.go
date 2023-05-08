@@ -87,7 +87,8 @@ func GoValidateStruct(objectToValidate interface{}) (bool, *models.ValidationErr
 	return true, &models.ValidationError{}
 }
 
-// Update a struct field dynamically
+// Update a struct field dynamically (at runtime)
+// Takes a field name and field value and updates the key value pair within the struct
 func UpdateStructField(structPtr interface{}, fieldName string, fieldValue interface{}) error {
 	value := reflect.ValueOf(structPtr)
 	if value.Kind() != reflect.Ptr || value.IsNil() {

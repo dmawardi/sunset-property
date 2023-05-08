@@ -198,7 +198,7 @@ func TestUserRepository_Update(t *testing.T) {
 		t.Errorf("An error was encountered while finding updated user: %v", err)
 	}
 
-	assert.Equal(t, foundUser, updatedUser, "Found user did is not equal to updated user")
+	assert.Equal(t, foundUser, updatedUser, "Found user is not equal to updated user")
 
 	// Clean up: Delete created user
 	testConnection.dbClient.Delete(updatedUser)

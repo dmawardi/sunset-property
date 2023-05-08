@@ -54,18 +54,11 @@ var DefaultPolicyList = []policySet{
 		subject: "admin", object: "/api/properties", action: "delete",
 	},
 	// user
-	{
-		subject: "user", object: "/api/properties", action: "create",
-	},
+
 	{
 		subject: "user", object: "/api/properties", action: "read",
 	},
-	{
-		subject: "user", object: "/api/properties", action: "update",
-	},
-	{
-		subject: "user", object: "/api/properties", action: "delete",
-	},
+
 	// api/features
 	// admin
 	{
@@ -81,16 +74,8 @@ var DefaultPolicyList = []policySet{
 		subject: "admin", object: "/api/features", action: "delete",
 	},
 	// user
-	{
-		subject: "user", object: "/api/features", action: "create",
-	},
+
 	{
 		subject: "user", object: "/api/features", action: "read",
-	},
-	{
-		subject: "user", object: "/api/features", action: "update",
-	},
-	{
-		subject: "user", object: "/api/features", action: "delete",
 	},
 }
