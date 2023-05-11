@@ -96,6 +96,7 @@ func (c propertyController) Find(w http.ResponseWriter, r *http.Request) {
 
 	foundProperty, err := c.service.FindById(idParameter)
 	if err != nil {
+		fmt.Printf("Can't find property with ID: %v\n. Error: %v", idParameter, err)
 		http.Error(w, fmt.Sprintf("Can't find property with ID: %v\n", idParameter), http.StatusBadRequest)
 		return
 	}

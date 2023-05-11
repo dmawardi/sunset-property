@@ -67,9 +67,6 @@ func main() {
 	// Set in state
 	app.DbClient = client
 
-	// userToCreate := db.User{Name: "Goba", Username: "Walow", Password: "certainly", Email: "gustav@mail.com"}
-	// createdUser, err := services.CreateUser(&userToCreate)
-
 	// Create api
 	api := ApiSetup(client)
 
@@ -113,7 +110,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	featService := service.NewFeatureService(featRepo)
 	featController := controller.NewFeatureController(featService)
 
+	// Property Log
+	propLogRepo := repository.NewPropertyLogRepository(client)
+	propLogService := service.NewPropertyLogService(propLogRepo)
+	propLogController := controller.NewPropertyLogController(propLogService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController)
+	api := routes.NewApi(userController, propController, featController, propLogController)
 	return api
 }

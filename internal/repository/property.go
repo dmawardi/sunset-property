@@ -59,7 +59,7 @@ func (r *propertyRepository) FindById(id int) (*db.Property, error) {
 	// Create an empty ref object of type property
 	property := db.Property{}
 	// Check if property exists in db
-	result := r.DB.Preload("Features").First(&property, id)
+	result := r.DB.Preload("Features").Preload("PropertyLogs").First(&property, id)
 
 	// Extract error result
 	err := result.Error
