@@ -52,14 +52,16 @@ type Feature struct {
 }
 
 type PropertyLog struct {
-	ID         uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index"`
-	UserID     uint           `json:"user_id"`
-	User       User           `json:"-" gorm:"not null;foreignKey:UserID"`
-	LogMessage string         `json:"log_message" gorm:"not null"`
-	Type       string         `json:"type" gorm:"not null"`
-	PropertyID uint           `json:"property_id"`
-	Property   Property       `json:"-" gorm:"not null;foreignKey:PropertyID"`
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+	// Use UserID as foreign key and User as object for relationship data
+	UserID     uint   `json:"user_id"`
+	User       User   `json:"user" gorm:"not null;foreignKey:UserID"`
+	LogMessage string `json:"log_message" gorm:"not null"`
+	Type       string `json:"type" gorm:"not null"`
+	// Use PropertyID as foreign key and Property as object for relationship data
+	PropertyID uint     `json:"property_id" gorm:"not null"`
+	Property   Property `json:"property"`
 }

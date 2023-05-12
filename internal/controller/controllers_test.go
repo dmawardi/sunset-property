@@ -27,11 +27,12 @@ var testConnection TestDbRepo
 var app config.AppConfig
 
 type TestDbRepo struct {
-	dbClient   *gorm.DB
-	users      userDB
-	properties propertyDB
-	features   featureDB
-	router     http.Handler
+	dbClient     *gorm.DB
+	users        userDB
+	properties   propertyDB
+	features     featureDB
+	propertyLogs propertyLogDB
+	router       http.Handler
 	// For authentication mocking
 	accounts userAccounts
 }
@@ -54,6 +55,12 @@ type featureDB struct {
 	serv    service.FeatureService
 	cont    controller.FeatureController
 	created []db.Feature
+}
+type propertyLogDB struct {
+	repo    repository.PropertyLogRepository
+	serv    service.PropertyLogService
+	cont    controller.PropertyLogController
+	created []db.PropertyLog
 }
 
 // Account structures
@@ -96,7 +103,7 @@ func TestMain(m *testing.M) {
 // Builds new API using routes packages
 func (t TestDbRepo) buildAPI() http.Handler {
 	api := routes.NewApi(
-		t.users.cont, t.properties.cont, t.features.cont,
+		t.users.cont, t.properties.cont, t.features.cont, t.propertyLogs.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -132,10 +139,14 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.users.repo = repository.NewUserRepository(t.dbClient)
 	t.users.serv = service.NewUserService(t.users.repo)
 	t.users.cont = controller.NewUserController(t.users.serv)
+	// Property Logs
+	t.propertyLogs.repo = repository.NewPropertyLogRepository(t.dbClient)
+	t.propertyLogs.serv = service.NewPropertyLogService(t.propertyLogs.repo)
+	t.propertyLogs.cont = controller.NewPropertyLogController(t.propertyLogs.serv)
 	// Properties
 	t.properties.repo = repository.NewPropertyRepository(t.dbClient)
 	t.properties.serv = service.NewPropertyService(t.properties.repo)
-	t.properties.cont = controller.NewPropertyController(t.properties.serv)
+	t.properties.cont = controller.NewPropertyController(t.properties.serv, t.propertyLogs.serv)
 	// Property Features
 	t.features.repo = repository.NewFeatureRepository(t.dbClient)
 	t.features.serv = service.NewFeatureService(t.features.repo)
@@ -154,7 +165,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 

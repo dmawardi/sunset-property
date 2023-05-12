@@ -100,20 +100,20 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	userService := service.NewUserService(userRepo)
 	userController := controller.NewUserController(userService)
 
+	// Property Log
+	propLogRepo := repository.NewPropertyLogRepository(client)
+	propLogService := service.NewPropertyLogService(propLogRepo)
+	propLogController := controller.NewPropertyLogController(propLogService)
+
 	// property
 	propRepo := repository.NewPropertyRepository(client)
 	propService := service.NewPropertyService(propRepo)
-	propController := controller.NewPropertyController(propService)
+	propController := controller.NewPropertyController(propService, propLogService)
 
 	// feature
 	featRepo := repository.NewFeatureRepository(client)
 	featService := service.NewFeatureService(featRepo)
 	featController := controller.NewFeatureController(featService)
-
-	// Property Log
-	propLogRepo := repository.NewPropertyLogRepository(client)
-	propLogService := service.NewPropertyLogService(propLogRepo)
-	propLogController := controller.NewPropertyLogController(propLogService)
 
 	// Build API using controllers
 	api := routes.NewApi(userController, propController, featController, propLogController)

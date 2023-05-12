@@ -99,7 +99,6 @@ func (r *propertyRepository) Update(id int, property *db.Property) (*db.Property
 		fmt.Println("Property to update not found: ", err)
 		return nil, err
 	}
-	fmt.Printf("Found property object to update: %v\n", foundProperty)
 
 	// Update found property using new property
 	updateResult := r.DB.Model(&foundProperty).Updates(property)

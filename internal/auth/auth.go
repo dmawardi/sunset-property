@@ -139,6 +139,25 @@ func ValidateAndParseToken(w http.ResponseWriter, r *http.Request) (tokenData *A
 	return claims, nil
 }
 
+// Grabs the user's ID from the JWT token
+func GetUserIDFromToken(w http.ResponseWriter, r *http.Request) (int, error) {
+	// Validate the token
+	tokenData, err := ValidateAndParseToken(w, r)
+	fmt.Println("tokendata received: ", tokenData)
+	// If error detected
+	if err != nil {
+		http.Error(w, "Error parsing authentication token", http.StatusForbidden)
+		return 0, err
+	}
+	// Convert user id from token to int and store
+	userIdFromToken, err := strconv.Atoi(tokenData.UserID)
+	if err != nil {
+		http.Error(w, "Issue with user id from token", http.StatusBadRequest)
+		return 0, err
+	}
+	return userIdFromToken, nil
+}
+
 // Takes the http method and returns a string based on it
 // for authorization assessment
 func ActionFromMethod(httpMethod string) string {

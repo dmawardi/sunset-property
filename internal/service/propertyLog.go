@@ -30,8 +30,9 @@ func (s *propertyLogService) Create(log *models.CreatePropertyLog) (*db.Property
 	// Create a new property of type db User
 	logMessageToCreate := db.PropertyLog{
 		User:       log.User,
-		Property:   log.Property,
+		PropertyID: log.Property.ID,
 		LogMessage: log.LogMessage,
+		Type:       log.Type,
 	}
 
 	// Create above user in database

@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
+	"strings"
 
+	"github.com/dmawardi/Go-Template/internal/auth"
+	"github.com/dmawardi/Go-Template/internal/db"
 	"github.com/dmawardi/Go-Template/internal/helpers"
 	"github.com/dmawardi/Go-Template/internal/models"
 	"github.com/dmawardi/Go-Template/internal/service"
@@ -22,10 +26,11 @@ type PropertyController interface {
 
 type propertyController struct {
 	service service.PropertyService
+	log     service.PropertyLogService
 }
 
-func NewPropertyController(service service.PropertyService) PropertyController {
-	return &propertyController{service}
+func NewPropertyController(service service.PropertyService, log service.PropertyLogService) PropertyController {
+	return &propertyController{service, log}
 }
 
 // API/PROPERTIES
@@ -96,7 +101,6 @@ func (c propertyController) Find(w http.ResponseWriter, r *http.Request) {
 
 	foundProperty, err := c.service.FindById(idParameter)
 	if err != nil {
-		fmt.Printf("Can't find property with ID: %v\n. Error: %v", idParameter, err)
 		http.Error(w, fmt.Sprintf("Can't find property with ID: %v\n", idParameter), http.StatusBadRequest)
 		return
 	}
@@ -190,17 +194,85 @@ func (c propertyController) Update(w http.ResponseWriter, r *http.Request) {
 	// Convert to int
 	idParameter, _ := strconv.Atoi(stringParameter)
 
+	// Generate a property log message frop property update in preparation for successful update
+	genPropLogMessage := buildPropLogUpdate(prop)
+	// Grab user id from token
+	userID, err := auth.GetUserIDFromToken(w, r)
+	if err != nil {
+		http.Error(w, "Authentication Token not detected", http.StatusForbidden)
+		return
+	}
+
 	// Update property
 	updatedProperty, createErr := c.service.Update(idParameter, &prop)
 	if createErr != nil {
 		http.Error(w, fmt.Sprintf("Failed property update: %s", createErr), http.StatusBadRequest)
 		return
 	}
+	// Proceed to update the property log with the update
+	c.log.Create(&models.CreatePropertyLog{
+		// From URL parameter
+		Property: db.Property{
+			ID: uint(idParameter),
+		},
+		// From JWT token
+		User: db.User{ID: uint(userID)},
+		// Generated message
+		LogMessage: genPropLogMessage,
+		Type:       "gen",
+	})
+
 	// Write property to output
 	err = helpers.WriteAsJSON(w, updatedProperty)
 	if err != nil {
 		fmt.Printf("Error encountered when writing to JSON. Err: %s", err)
 	}
+}
+
+// Build a log string for property updates
+func buildPropLogUpdate(updateStruct interface{}) string {
+	// Log update
+	var updateString string = "UPDATE: "
+	// Iterate through key value pairs within the struct
+	// Get the type of the struct
+	t := reflect.TypeOf(updateStruct)
+
+	// Iterate through the fields of the struct
+	for i := 0; i < t.NumField(); i++ {
+		// Get the field
+		field := t.Field(i)
+		// Get the value of the field
+		value := reflect.ValueOf(updateStruct).Field(i).Interface()
+		// Get the type of value
+		valueType := reflect.TypeOf(value)
+		// fmt.Printf("\n%s (%s): %v", field.Name, valueType, value)
+
+		// If value type is string
+		if valueType.String() == "string" {
+			// and not empty
+			if value != "" {
+				fmt.Printf("\nString value found in Field name: %v", field.Name)
+				updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string)[0:5]+"...")
+			}
+			// else if value type is numeric
+		} else if valueType.String() == "int" || valueType.String() == "int64" || valueType.String() == "float64" || valueType.String() == "float32" {
+			// and not empty
+			if value != "0" || value != "0.0" {
+				updateString += fmt.Sprintf("%s, ", field.Name)
+			}
+			// else if value type is struct
+		} else if strings.Contains(valueType.String(), "[]") {
+			updateString += fmt.Sprintf("[]%s, ", field.Name)
+		}
+
+	}
+	// Get length of string
+	stringLength := len(updateString)
+	// Remove last two characters of string (comma and space)
+	removeFromEnd := stringLength - 2
+	croppedLogMessage := updateString[:removeFromEnd]
+
+	return croppedLogMessage
 }
 
 // Delete property (using URL parameter id)

@@ -51,7 +51,7 @@ func (r *propertyLogRepository) FindById(id int) (*db.PropertyLog, error) {
 	// Create an empty ref object of type property log
 	logMessage := db.PropertyLog{}
 	// Grab log message from db if exists
-	result := r.DB.First(&logMessage, id)
+	result := r.DB.Preload("User").Preload("Property").First(&logMessage, id)
 
 	// If error detected
 	if result.Error != nil {
