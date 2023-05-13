@@ -257,7 +257,7 @@ func buildPropLogUpdate(updateStruct interface{}) string {
 			// else if value type is numeric
 		} else if valueType.String() == "int" || valueType.String() == "int64" || valueType.String() == "float64" || valueType.String() == "float32" {
 			// and not empty
-			if value != "0" || value != "0.0" {
+			if value != "0" && value != "0.0" {
 				updateString += fmt.Sprintf("%s, ", field.Name)
 			}
 			// else if value type is struct
