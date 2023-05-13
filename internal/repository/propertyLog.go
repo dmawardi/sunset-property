@@ -121,6 +121,8 @@ func QueryAllPropertyLogsBasedOnParams(limit int, offset int, order string, dbCl
 	// order format should be "column_name ASC/DESC" eg. "created_at ASC"
 	if order != "" {
 		query.Order(order)
+	} else {
+		query.Order("created_at DESC")
 	}
 	// Query database
 	result := query.Find(&log)
