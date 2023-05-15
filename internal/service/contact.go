@@ -92,7 +92,6 @@ func (s *contactService) Update(id int, c *models.UpdateContact) (*db.Contact, e
 		Mobile:       c.Mobile,
 		ContactType:  c.ContactType,
 		ContactNotes: c.ContactNotes,
-		Properties:   c.Properties,
 	}
 
 	// Update using repo

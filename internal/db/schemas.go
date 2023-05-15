@@ -81,7 +81,7 @@ type Contact struct {
 	Phone        string         `json:"phone"`
 	Mobile       string         `json:"mobile"`
 	ContactNotes string         `json:"notes"`
-	Properties   []Property     `json:"properties"`
+	Properties   []Property     `json:"properties" gorm:"many2many:contact_properties"`
 	// Vendors []Vendor `json:"vendors" gorm:"many2many:contact_vendors"`
 	// Transactions []Transaction `json:"transactions" gorm:"many2many:contact_transactions"`
 }
