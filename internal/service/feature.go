@@ -26,12 +26,12 @@ func NewFeatureService(repo repository.FeatureRepository) FeatureService {
 
 // Creates a property feature in the database
 func (s *featureService) Create(feat *models.CreateFeature) (*db.Feature, error) {
-	// Create a new property of type db User
+	// Create a new property feature
 	featToCreate := db.Feature{
 		Feature_Name: feat.Feature_Name,
 	}
 
-	// Create above user in database
+	// Create feature in database
 	createdFeat, err := s.repo.Create(&featToCreate)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating property feature: %w", err)

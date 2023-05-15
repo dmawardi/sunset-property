@@ -7,6 +7,7 @@ import (
 )
 
 // Schemas
+// Users
 type User struct {
 	// gorm.Model `json:"-"`
 	ID           uint           `json:"id" gorm:"primaryKey"`
@@ -21,6 +22,7 @@ type User struct {
 	PropertyLogs []PropertyLog  `json:"property_logs"`
 }
 
+// Properties
 type Property struct {
 	ID               uint           `json:"id" gorm:"primaryKey"`
 	CreatedAt        time.Time      `json:"created_at"`
@@ -64,4 +66,22 @@ type PropertyLog struct {
 	// Use PropertyID as foreign key and Property as object for relationship data
 	PropertyID uint     `json:"property_id" gorm:"not null"`
 	Property   Property `json:"property"`
+}
+
+// Contacts
+type Contact struct {
+	ID           uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index"`
+	FirstName    string         `json:"first_name" gorm:"not null"`
+	LastName     string         `json:"last_name"`
+	ContactType  string         `json:"contact_type" gorm:"not null"`
+	Email        string         `json:"email"`
+	Phone        string         `json:"phone"`
+	Mobile       string         `json:"mobile"`
+	ContactNotes string         `json:"notes"`
+	Properties   []Property     `json:"properties"`
+	// Vendors []Vendor `json:"vendors" gorm:"many2many:contact_vendors"`
+	// Transactions []Transaction `json:"transactions" gorm:"many2many:contact_transactions"`
 }

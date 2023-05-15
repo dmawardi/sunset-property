@@ -28,6 +28,7 @@ func DbConnect() *gorm.DB {
 	db.AutoMigrate(&Property{})
 	db.AutoMigrate(&Feature{})
 	db.AutoMigrate(&PropertyLog{})
+	db.AutoMigrate(&Contact{})
 
 	return db
 }
