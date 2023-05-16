@@ -105,6 +105,7 @@ func (s *propertyService) Update(id int, prop *models.UpdateProperty) (*db.Prope
 		Description:      prop.Description,
 		Notes:            prop.Notes,
 		Features:         prop.Features,
+		Contacts:         prop.Contacts,
 	}
 
 	// Update using repo

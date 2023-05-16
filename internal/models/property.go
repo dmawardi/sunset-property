@@ -32,4 +32,5 @@ type UpdateProperty struct {
 	Description      string       `json:"description,omitempty" valid:"length(5|250)"`
 	Notes            string       `json:"notes,omitempty" valid:"length(5|250)"`
 	Features         []db.Feature `json:"features,omitempty" valid:""`
+	Contacts         []db.Contact `json:"contacts,omitempty" valid:""`
 }

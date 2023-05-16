@@ -42,6 +42,7 @@ type Property struct {
 	Notes            string         `json:"notes"`
 	Features         []Feature      `json:"features" gorm:"many2many:prop_features"`
 	PropertyLogs     []PropertyLog  `json:"property_logs" gorm:"foreignKey:PropertyID"`
+	Contacts         []Contact      `json:"contacts" gorm:"many2many:contact_properties"`
 }
 
 type Feature struct {

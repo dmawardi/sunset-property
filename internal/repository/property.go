@@ -59,7 +59,7 @@ func (r *propertyRepository) FindById(id int) (*db.Property, error) {
 	// Create an empty ref object of type property
 	property := db.Property{}
 	// Check if property exists in db
-	result := r.DB.Preload("Features").Preload("PropertyLogs").First(&property, id)
+	result := r.DB.Preload("Features").Preload("PropertyLogs").Preload("Contacts").First(&property, id)
 
 	// Extract error result
 	err := result.Error
@@ -90,7 +90,6 @@ func (r *propertyRepository) Delete(id int) error {
 
 // Updates property in database
 func (r *propertyRepository) Update(id int, property *db.Property) (*db.Property, error) {
-	fmt.Printf("Property object to update (id: %v): %v\n", id, property.Features)
 	// Init
 	var err error
 	// Find property by id
@@ -124,14 +123,25 @@ func (r *propertyRepository) Update(id int, property *db.Property) (*db.Property
 	// Check if association update failed
 	if assResult != nil {
 		fmt.Println("Property association update failed: ", assResult)
-		return nil, err
+		return nil, assResult
+	}
+
+	// Depending on if contacts already exist on property
+	if len(property.Contacts) > 0 {
+		// Replace
+		assResult = r.DB.Model(&foundProperty).Association("Contacts").Replace(property.Contacts)
+	}
+	// Check if association update failed
+	if assResult != nil {
+		fmt.Println("Property association update failed: ", assResult)
+		return nil, assResult
 	}
 
 	// Retrieve updated property by id
 	updatedProperty, err := r.FindById(id)
 	if err != nil {
 		fmt.Println("Updated property not found: ", err)
-		return nil, err
+		return nil, assResult
 	}
 	return updatedProperty, nil
 }
