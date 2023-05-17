@@ -80,6 +80,12 @@ go test ./...
 
 This will run all files that match the testing file naming convention (\*\_test.go).
 
+Tests for repositories, services, and controllers should be in their respsective directories. The controllers folder consists of E2E tests.  
+The setup for these tests is in the controllers_test.go file.
+
+Upon adding a new module:
+-Make sure to build a DB struct that contains the modules of: repo, service, & controller. This object should then be added to the testDbRepo which serves as the test connection that will be serving the requests for the DB and API.
+
 #### Additional flags
 
 - "-V" prints more detailed results

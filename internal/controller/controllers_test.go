@@ -32,6 +32,7 @@ type TestDbRepo struct {
 	properties   propertyDB
 	features     featureDB
 	propertyLogs propertyLogDB
+	contacts     contactDB
 	router       http.Handler
 	// For authentication mocking
 	accounts userAccounts
@@ -48,6 +49,12 @@ type propertyDB struct {
 	serv    service.PropertyService
 	cont    controller.PropertyController
 	created []db.Property
+}
+
+type contactDB struct {
+	repo repository.ContactRepository
+	serv service.ContactService
+	cont controller.ContactController
 }
 
 type featureDB struct {
@@ -103,7 +110,7 @@ func TestMain(m *testing.M) {
 // Builds new API using routes packages
 func (t TestDbRepo) buildAPI() http.Handler {
 	api := routes.NewApi(
-		t.users.cont, t.properties.cont, t.features.cont, t.propertyLogs.cont,
+		t.users.cont, t.properties.cont, t.features.cont, t.propertyLogs.cont, t.contacts.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -151,6 +158,10 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.features.repo = repository.NewFeatureRepository(t.dbClient)
 	t.features.serv = service.NewFeatureService(t.features.repo)
 	t.features.cont = controller.NewFeatureController(t.features.serv)
+	// Contacts
+	t.contacts.repo = repository.NewContactRepository(t.dbClient)
+	t.contacts.serv = service.NewContactService(t.contacts.repo)
+	t.contacts.cont = controller.NewContactController(t.contacts.serv)
 
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)
