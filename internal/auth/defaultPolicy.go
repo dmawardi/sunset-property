@@ -108,4 +108,19 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/contacts", action: "delete",
 	},
+
+	// api/tasks
+	// admin
+	{
+		subject: "admin", object: "/api/tasks", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/tasks", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/tasks", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/tasks", action: "delete",
+	},
 }

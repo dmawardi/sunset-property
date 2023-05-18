@@ -229,6 +229,36 @@ func (c propertyController) Update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Delete property (using URL parameter id)
+// @Summary      Delete Property
+// @Description  Deletes an existing property
+// @Tags         Property
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Property ID"
+// @Success      200 {string} string "Deletion successful!"
+// @Failure      400 {string} string "Failed property deletion"
+// @Router       /properties/{id} [delete]
+// @Security BearerToken
+func (c propertyController) Delete(w http.ResponseWriter, r *http.Request) {
+	// Grab URL parameter
+	stringParameter := chi.URLParam(r, "id")
+	// Convert to int
+	idParameter, _ := strconv.Atoi(stringParameter)
+
+	// Attampt to delete property using id
+	err := c.service.Delete(idParameter)
+
+	// If error detected
+	if err != nil {
+		http.Error(w, "Failed property deletion", http.StatusBadRequest)
+		return
+	}
+	// Else write success
+	w.Write([]byte("Deletion successful!"))
+	return
+}
+
 // Build a log string for property updates
 func buildPropLogUpdate(updateStruct interface{}) string {
 	// Log update
@@ -273,34 +303,4 @@ func buildPropLogUpdate(updateStruct interface{}) string {
 	croppedLogMessage := updateString[:removeFromEnd]
 
 	return croppedLogMessage
-}
-
-// Delete property (using URL parameter id)
-// @Summary      Delete Property
-// @Description  Deletes an existing property
-// @Tags         Property
-// @Accept       json
-// @Produce      json
-// @Param        id   path      int  true  "Property ID"
-// @Success      200 {string} string "Deletion successful!"
-// @Failure      400 {string} string "Failed property deletion"
-// @Router       /properties/{id} [delete]
-// @Security BearerToken
-func (c propertyController) Delete(w http.ResponseWriter, r *http.Request) {
-	// Grab URL parameter
-	stringParameter := chi.URLParam(r, "id")
-	// Convert to int
-	idParameter, _ := strconv.Atoi(stringParameter)
-
-	// Attampt to delete property using id
-	err := c.service.Delete(idParameter)
-
-	// If error detected
-	if err != nil {
-		http.Error(w, "Failed property deletion", http.StatusBadRequest)
-		return
-	}
-	// Else write success
-	w.Write([]byte("Deletion successful!"))
-	return
 }

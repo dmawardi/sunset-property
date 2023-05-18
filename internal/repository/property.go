@@ -63,7 +63,6 @@ func (r *propertyRepository) FindById(id int) (*db.Property, error) {
 
 	// Extract error result
 	err := result.Error
-	fmt.Printf("err found searching for id (%v): %v\n", id, err)
 	// If error detected
 	if err != nil {
 		return nil, err

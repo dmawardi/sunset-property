@@ -10,16 +10,18 @@ import (
 // Users
 type User struct {
 	// gorm.Model `json:"-"`
-	ID           uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index"`
-	Name         string         `json:"name"`
-	Username     string         `json:"username"`
-	Email        string         `json:"email" gorm:"uniqueIndex"`
-	Password     string         `json:"-"`
-	Role         string         `json:"role" gorm:"default:user"`
-	PropertyLogs []PropertyLog  `json:"property_logs"`
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Name      string         `json:"name"`
+	Username  string         `json:"username"`
+	Email     string         `json:"email" gorm:"uniqueIndex"`
+	Password  string         `json:"-"`
+	Role      string         `json:"role" gorm:"default:user"`
+	// Foreign keys
+	PropertyLogs []PropertyLog `json:"property_logs"`
+	Tasks        []Task        `json:"tasks" gorm:"many2many:user_tasks"`
 }
 
 // Properties
@@ -40,9 +42,11 @@ type Property struct {
 	Land_Metric      string         `json:"land_metric"`
 	Description      string         `json:"description"`
 	Notes            string         `json:"notes"`
-	Features         []Feature      `json:"features" gorm:"many2many:prop_features"`
-	PropertyLogs     []PropertyLog  `json:"property_logs" gorm:"foreignKey:PropertyID"`
-	Contacts         []Contact      `json:"contacts" gorm:"many2many:contact_properties"`
+	// One to many
+	PropertyLogs []PropertyLog `json:"property_logs" gorm:"foreignKey:PropertyID"`
+	// Many to many
+	Features []Feature `json:"features" gorm:"many2many:prop_features"`
+	Contacts []Contact `json:"contacts" gorm:"many2many:contact_properties"`
 }
 
 type Feature struct {
@@ -82,7 +86,51 @@ type Contact struct {
 	Phone        string         `json:"phone"`
 	Mobile       string         `json:"mobile"`
 	ContactNotes string         `json:"notes"`
-	Properties   []Property     `json:"properties" gorm:"many2many:contact_properties"`
-	// Vendors []Vendor `json:"vendors" gorm:"many2many:contact_vendors"`
+	// Relationships
+	Properties []Property `json:"properties" gorm:"many2many:contact_properties"`
 	// Transactions []Transaction `json:"transactions" gorm:"many2many:contact_transactions"`
+	// Vendors []Vendor `json:"vendors" gorm:"many2many:contact_vendors"`
 }
+
+// Tasks
+type Task struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	// Required fields
+	TaskName string `json:"task_name,omitempty" gorm:"not null"`
+	Type     string `json:"type,omitempty" gorm:"not null, enum:maintenance,inspection,transaction,other"`
+	// Default fields
+	Status    string `json:"status,omitempty" gorm:"default:created;enum:created,open,pending,cancelled,processing,active,completed,archived"`
+	Notes     string `json:"notes,omitempty" gorm:"default:null"`
+	Snoozed   bool   `json:"snoozed,omitempty" gorm:"default:false"`
+	Completed bool   `json:"completed,omitempty" gorm:"default:false"`
+	// Optional fields
+	SnoozedTill time.Time `json:"snoozed_till,omitempty"`
+	// Relationship fields
+	// Many to many
+	Assignment []User `json:"assignment,omitempty" gorm:"many2many:user_tasks"`
+	// Note: Relationship between tasks and properties are handled within transactions
+	// One to one
+	// TransactionID uint     `json:"property_id,omitempty"`
+	// Transaction   Transaction `json:"property,omitempty" gorm:"foreignKey:TransactionID"`
+}
+
+// Types of tasks: Transactions, Maintenance Requests, Inspections, Appraisals, Other
+// Transactions
+// type Transaction struct {
+// 	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+// 	CreatedAt time.Time      `json:"created_at,omitempty"`
+// 	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+// 	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+// 	Type      string         `json:"type,omitempty" gorm:"not null"`
+// 	Agency    string         `json:"agency,omitempty" gorm:"not null"`
+// 	Status    string         `json:"status,omitempty" gorm:"not null"`
+// 	Notes     string         `json:"notes,omitempty"`
+// 	// Many to one (requires uint for key and Property for object data)
+// 	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
+// 	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
+// 	// Many to many
+// 	Contacts []Contact `json:"contacts,omitempty" gorm:"many2many:contact_transactions"`
+// }

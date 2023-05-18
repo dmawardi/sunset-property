@@ -27,9 +27,9 @@ const portNumber = ":8080"
 var app config.AppConfig
 
 // API Details
-// @title           Go Template
+// @title           TBK Property API
 // @version         1.0
-// @description     This is a template API server.
+// @description     This is the API server for TBK property.
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -120,7 +120,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	contactService := service.NewContactService(contactRepo)
 	contactController := controller.NewContactController(contactService)
 
+	// task
+	taskRepo := repository.NewTaskRepository(client)
+	taskService := service.NewTaskService(taskRepo)
+	taskController := controller.NewTaskController(taskService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController, propLogController, contactController)
+	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController)
 	return api
 }
