@@ -8,10 +8,10 @@ import (
 
 type CreateTask struct {
 	// Required fields
-	TaskName string `json:"task_name,omitempty" valid:"required, length(2|36)"`
-	Type     string `json:"type,omitempty" valid:"required,in(maintenance|inspection|transaction|other)"`
+	TaskName string `json:"task_name,omitempty" valid:"required, length(3|36)"`
+	Status   string `json:"status,omitempty" valid:"length(3|36), in(Created|Open|Pending|Cancelled|Processing|Active|Completed|Archived)"`
+	Type     string `json:"type,omitempty" valid:"required,in(Maintenance|Inspection|Transaction|Other)"`
 	// Optional fields
-	Status      string    `json:"status,omitempty" valid:"length(2|36), in(created|open|pending|cancelled|processing|active|completed|archived)"`
 	Notes       string    `json:"notes,omitempty" valid:"length(5|320)"`
 	SnoozedTill time.Time `json:"snoozed_till,omitempty" valid:"time"`
 	Snoozed     bool      `json:"snoozed,omitempty" valid:"bool"`
@@ -23,8 +23,8 @@ type CreateTask struct {
 type UpdateTask struct {
 	// Required fields
 	TaskName string `json:"task_name,omitempty" valid:"length(2|36)"`
-	Status   string `json:"status,omitempty" valid:"length(2|36), in(created|open|pending|cancelled|processing|active|completed|archived)"`
-	Type     string `json:"type,omitempty" valid:"in(maintenance|inspection|transaction|other)"`
+	Status   string `json:"status,omitempty" valid:"length(2|36), in(Created|Open|Pending|Cancelled|Processing|Active|Completed|Archived)"`
+	Type     string `json:"type,omitempty" valid:"in(Maintenance|Inspection|Transaction|Other)"`
 	// Optional fields
 	Notes       string    `json:"notes,omitempty" valid:"length(5|320)"`
 	SnoozedTill time.Time `json:"snoozed_till,omitempty" valid:"time"`

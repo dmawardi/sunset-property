@@ -100,9 +100,9 @@ type Task struct {
 	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
 	// Required fields
 	TaskName string `json:"task_name,omitempty" gorm:"not null"`
-	Type     string `json:"type,omitempty" gorm:"not null, enum:maintenance,inspection,transaction,other"`
+	Type     string `json:"type,omitempty" gorm:"not null, enum:Maintenance,Inspection,Transaction,Other"`
 	// Default fields
-	Status    string `json:"status,omitempty" gorm:"default:created;enum:created,open,pending,cancelled,processing,active,completed,archived"`
+	Status    string `json:"status,omitempty" gorm:"default:created;enum:Created,Open,Pending,Cancelled,Processing,Active,Completed,Archived"`
 	Notes     string `json:"notes,omitempty" gorm:"default:null"`
 	Snoozed   bool   `json:"snoozed,omitempty" gorm:"default:false"`
 	Completed bool   `json:"completed,omitempty" gorm:"default:false"`
