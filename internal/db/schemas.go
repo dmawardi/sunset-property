@@ -11,16 +11,17 @@ import (
 type User struct {
 	// gorm.Model `json:"-"`
 	ID        uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Name      string         `json:"name"`
-	Username  string         `json:"username"`
-	Email     string         `json:"email" gorm:"uniqueIndex"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	Name      string         `json:"name,omitempty"`
+	Username  string         `json:"username,omitempty"`
+	Email     string         `json:"email,omitempty" gorm:"uniqueIndex"`
 	Password  string         `json:"-"`
-	Role      string         `json:"role" gorm:"default:user"`
+	Role      string         `json:"role,omitempty" gorm:"default:user"`
 	// Foreign keys
 	PropertyLogs []PropertyLog `json:"property_logs"`
+	TaskLogs     []TaskLog     `json:"task_logs"`
 	Tasks        []Task        `json:"tasks" gorm:"many2many:user_tasks"`
 }
 
@@ -67,10 +68,10 @@ type PropertyLog struct {
 	UserID     uint   `json:"user_id"`
 	User       User   `json:"user" gorm:"not null;foreignKey:UserID"`
 	LogMessage string `json:"log_message" gorm:"not null"`
-	Type       string `json:"type" gorm:"not null"`
+	Type       string `json:"type" gorm:"not null;enum:INPUT,GEN"`
 	// Use PropertyID as foreign key and Property as object for relationship data
 	PropertyID uint     `json:"property_id" gorm:"not null"`
-	Property   Property `json:"property"`
+	Property   Property `json:"property" gorm:"not null;foreignKey:PropertyID"`
 }
 
 // Contacts
@@ -111,10 +112,27 @@ type Task struct {
 	// Relationship fields
 	// Many to many
 	Assignment []User `json:"assignment,omitempty" gorm:"many2many:user_tasks"`
+	// One to many
+	Log []TaskLog `json:"log,omitempty" gorm:"foreignKey:TaskID"`
 	// Note: Relationship between tasks and properties are handled within transactions
 	// One to one
 	// TransactionID uint     `json:"property_id,omitempty"`
 	// Transaction   Transaction `json:"property,omitempty" gorm:"foreignKey:TransactionID"`
+}
+
+type TaskLog struct {
+	ID         uint           `json:"id" gorm:"primaryKey"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index"`
+	LogMessage string         `json:"log_message" gorm:"not null"`
+	Type       string         `json:"type" gorm:"not null;enum:INPUT,GEN"`
+	// Use UserID as foreign key and User as object for relationship data
+	UserID uint `json:"user_id"`
+	User   User `json:"user" gorm:"not null;foreignKey:UserID"`
+	// Use TaskID as foreign key and Task as object for relationship data
+	TaskID uint `json:"task_id" gorm:"not null"`
+	Task   Task `json:"task" gorm:"not null;foreignKey:TaskID"`
 }
 
 // Types of tasks: Transactions, Maintenance Requests, Inspections, Appraisals, Other

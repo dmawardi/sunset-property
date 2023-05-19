@@ -22,10 +22,17 @@ type api struct {
 	propertyLog controller.PropertyLogController
 	contact     controller.ContactController
 	task        controller.TaskController
+	taskLog     controller.TaskLogController
 }
 
-func NewApi(user controller.UserController, property controller.PropertyController, feature controller.FeatureController, propertyLog controller.PropertyLogController, contact controller.ContactController, task controller.TaskController) Api {
-	return &api{user, property, feature, propertyLog, contact, task}
+func NewApi(user controller.UserController,
+	property controller.PropertyController,
+	feature controller.FeatureController,
+	propertyLog controller.PropertyLogController,
+	contact controller.ContactController,
+	task controller.TaskController,
+	taskLog controller.TaskLogController) Api {
+	return &api{user, property, feature, propertyLog, contact, task, taskLog}
 }
 
 func (a api) Routes() http.Handler {
@@ -97,6 +104,13 @@ func (a api) Routes() http.Handler {
 			mux.Get("/api/tasks/{id}", a.task.Find)
 			mux.Put("/api/tasks/{id}", a.task.Update)
 			mux.Delete("/api/tasks/{id}", a.task.Delete)
+
+			// Task Logs
+			mux.Post("/api/task-logs", a.taskLog.Create)
+			mux.Get("/api/task-logs", a.taskLog.FindAll)
+			mux.Get("/api/task-logs/{id}", a.taskLog.Find)
+			mux.Put("/api/task-logs/{id}", a.taskLog.Update)
+			mux.Delete("/api/task-logs/{id}", a.taskLog.Delete)
 
 		})
 

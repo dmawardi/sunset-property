@@ -125,7 +125,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	taskService := service.NewTaskService(taskRepo)
 	taskController := controller.NewTaskController(taskService)
 
+	// task logs
+	taskLogRepo := repository.NewTaskLogRepository(client)
+	taskLogService := service.NewTaskLogService(taskLogRepo)
+	taskLogController := controller.NewTaskLogController(taskLogService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController)
+	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController)
 	return api
 }
