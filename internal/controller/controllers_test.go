@@ -177,15 +177,15 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.contacts.serv = service.NewContactService(t.contacts.repo)
 	t.contacts.cont = controller.NewContactController(t.contacts.serv)
 
-	// Tasks
-	t.tasks.repo = repository.NewTaskRepository(t.dbClient)
-	t.tasks.serv = service.NewTaskService(t.tasks.repo)
-	t.tasks.cont = controller.NewTaskController(t.tasks.serv)
-
 	// Task logs
 	t.taskLogs.repo = repository.NewTaskLogRepository(t.dbClient)
 	t.taskLogs.serv = service.NewTaskLogService(t.taskLogs.repo)
 	t.taskLogs.cont = controller.NewTaskLogController(t.taskLogs.serv)
+
+	// Tasks
+	t.tasks.repo = repository.NewTaskRepository(t.dbClient)
+	t.tasks.serv = service.NewTaskService(t.tasks.repo)
+	t.tasks.cont = controller.NewTaskController(t.tasks.serv, t.taskLogs.serv)
 
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)

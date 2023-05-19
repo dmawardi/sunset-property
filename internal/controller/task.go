@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strconv"
+	"strings"
 
+	"github.com/dmawardi/Go-Template/internal/auth"
+	"github.com/dmawardi/Go-Template/internal/db"
 	"github.com/dmawardi/Go-Template/internal/helpers"
 	"github.com/dmawardi/Go-Template/internal/models"
 	"github.com/dmawardi/Go-Template/internal/service"
@@ -22,10 +26,11 @@ type TaskController interface {
 
 type taskController struct {
 	service service.TaskService
+	log     service.TaskLogService
 }
 
-func NewTaskController(service service.TaskService) TaskController {
-	return &taskController{service}
+func NewTaskController(service service.TaskService, log service.TaskLogService) TaskController {
+	return &taskController{service, log}
 }
 
 // API/TASKS
@@ -190,13 +195,13 @@ func (c taskController) Update(w http.ResponseWriter, r *http.Request) {
 	idParameter, _ := strconv.Atoi(stringParameter)
 
 	// Generate a log message frop task update in preparation for successful update
-	// genTaskLogMessage := buildLogUpdate(task)
-	// // Grab user id from token
-	// userID, err := auth.GetUserIDFromToken(w, r)
-	// if err != nil {
-	// 	http.Error(w, "Authentication Token not detected", http.StatusForbidden)
-	// 	return
-	// }
+	genTaskLogMessage := buildTaskLogUpdate(task)
+	// Grab user id from token
+	userID, err := auth.GetUserIDFromToken(w, r)
+	if err != nil {
+		http.Error(w, "Authentication Token not detected", http.StatusForbidden)
+		return
+	}
 
 	// Update task
 	updatedTask, createErr := c.service.Update(idParameter, &task)
@@ -205,17 +210,17 @@ func (c taskController) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Proceed to update the log with the update
-	// c.log.Create(&models.CreatePropertyLog{
-	// 	// From URL parameter
-	// 	Property: db.Property{
-	// 		ID: uint(idParameter),
-	// 	},
-	// 	// From JWT token
-	// 	User: db.User{ID: uint(userID)},
-	// 	// Generated message
-	// 	LogMessage: genPropLogMessage,
-	// 	Type:       "gen",
-	// })
+	c.log.Create(&models.CreateTaskLog{
+		// From URL parameter
+		Task: db.Task{
+			ID: uint(idParameter),
+		},
+		// From JWT token
+		User: db.User{ID: uint(userID)},
+		// Generated message
+		LogMessage: genTaskLogMessage,
+		Type:       "GEN",
+	})
 
 	// Write task to output
 	err = helpers.WriteAsJSON(w, updatedTask)
@@ -254,46 +259,53 @@ func (c taskController) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 // Build a log string for struct updates
-// func buildLogUpdate(updateStruct interface{}) string {
-// 	// Log update
-// 	var updateString string = "UPDATE: "
-// 	// Iterate through key value pairs within the struct
-// 	// Get the type of the struct
-// 	t := reflect.TypeOf(updateStruct)
+func buildTaskLogUpdate(updateStruct interface{}) string {
+	// Log update
+	var updateString string = "UPDATE: "
+	// Iterate through key value pairs within the struct
+	// Get the type of the struct
+	t := reflect.TypeOf(updateStruct)
 
-// 	// Iterate through the fields of the struct
-// 	for i := 0; i < t.NumField(); i++ {
-// 		// Get the field
-// 		field := t.Field(i)
-// 		// Get the value of the field
-// 		value := reflect.ValueOf(updateStruct).Field(i).Interface()
-// 		// Get the type of value
-// 		valueType := reflect.TypeOf(value)
+	// Iterate through the fields of the struct
+	for i := 0; i < t.NumField(); i++ {
+		// Get the field
+		field := t.Field(i)
+		// Get the value of the field
+		value := reflect.ValueOf(updateStruct).Field(i).Interface()
+		// Get the type of value
+		valueType := reflect.TypeOf(value)
 
-// 		// If value type is string
-// 		if valueType.String() == "string" {
-// 			// and not empty
-// 			if value != "" {
-// 				fmt.Printf("\nString value found in Field name: %v", field.Name)
-// 				updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string)[0:5]+"...")
-// 			}
-// 			// else if value type is numeric
-// 		} else if valueType.String() == "int" || valueType.String() == "int64" || valueType.String() == "float64" || valueType.String() == "float32" {
-// 			// and not empty
-// 			if value != "0" && value != "0.0" {
-// 				updateString += fmt.Sprintf("%s, ", field.Name)
-// 			}
-// 			// else if value type is struct
-// 		} else if strings.Contains(valueType.String(), "[]") {
-// 			updateString += fmt.Sprintf("[]%s, ", field.Name)
-// 		}
+		// If value type is string
+		if valueType.String() == "string" {
+			// and not empty
+			if value != "" {
+				fmt.Printf("\nString value found in Field name: %v", field.Name)
+				// Convert value to string
+				valueString := value.(string)
+				if len(valueString) > 10 {
+					updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string)[0:10]+"...")
+				} else {
+					updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string))
+				}
+				// updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string)[0:5]+"...")
+			}
+			// else if value type is numeric
+		} else if valueType.String() == "int" || valueType.String() == "int64" || valueType.String() == "float64" || valueType.String() == "float32" {
+			// and not empty
+			if value != "0" && value != "0.0" {
+				updateString += fmt.Sprintf("%s, ", field.Name)
+			}
+			// else if value type is struct
+		} else if strings.Contains(valueType.String(), "[]") {
+			updateString += fmt.Sprintf("[]%s, ", field.Name)
+		}
 
-// 	}
-// 	// Get length of string
-// 	stringLength := len(updateString)
-// 	// Remove last two characters of string (comma and space)
-// 	removeFromEnd := stringLength - 2
-// 	croppedLogMessage := updateString[:removeFromEnd]
+	}
+	// Get length of string
+	stringLength := len(updateString)
+	// Remove last two characters of string (comma and space)
+	removeFromEnd := stringLength - 2
+	croppedLogMessage := updateString[:removeFromEnd]
 
-// 	return croppedLogMessage
-// }
+	return croppedLogMessage
+}
