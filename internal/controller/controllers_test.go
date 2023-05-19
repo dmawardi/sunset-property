@@ -200,7 +200,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 

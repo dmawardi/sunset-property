@@ -100,7 +100,7 @@ func (c taskLogController) Find(w http.ResponseWriter, r *http.Request) {
 	// Query database for task log message using ID
 	found, err := c.service.FindById(idParameter)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Can't find task log message with ID: %v\n", idParameter), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Can't find task log message with ID: %v\n%v", idParameter, err), http.StatusBadRequest)
 		return
 	}
 	// Write found task log message to response
@@ -117,7 +117,7 @@ func (c taskLogController) Find(w http.ResponseWriter, r *http.Request) {
 // @Tags         Task Log
 // @Accept       json
 // @Produce      json
-// @Param        taskLog body models.CreateTaskLog true "New Task Log Json"
+// @Param        taskLog body models.RecvTaskLog true "New Task Log Json"
 // @Success      201 {string} string "Task log message creation successful!"
 // @Failure      400 {string} string "Task log message creation failed."
 // @Router       /task-logs [post]

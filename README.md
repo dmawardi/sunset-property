@@ -67,7 +67,7 @@ Follow these steps to add a feature to the API. This template uses the clean arc
 6. Add the new controller to the API struct in the ./internal/routes/routes.go file. This allows it to be used within the Routes function in the same file. Build routes to use the handlers that have been created in step 4 using the api struct.
 7. Update the ApiSetup function in the ./cmd/main.go file to build the new repository, service, and controller.
 8. Add the route to the RBAC authorization policy file (./internal/auth/defaultPolicy.go)
-9. (Testing) For e2e testing, you will need to update the controllers_test.go file in ./internal/controller. Updates are required in the buildAPI & setupDBAuthAppModels functions
+9. (Testing) For e2e testing, you will need to update the controllers_test.go file in ./internal/controller. Updates are required in the buildAPI, setupDatabase & setupDBAuthAppModels functions
 
 ---
 

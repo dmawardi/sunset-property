@@ -101,7 +101,7 @@ func (c taskController) Find(w http.ResponseWriter, r *http.Request) {
 
 	foundTask, err := c.service.FindById(idParameter)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Can't find task with ID: %v\n", idParameter), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Can't find task with ID: %v", idParameter), http.StatusBadRequest)
 		return
 	}
 	err = helpers.WriteAsJSON(w, foundTask)

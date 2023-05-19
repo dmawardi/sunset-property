@@ -122,7 +122,6 @@ func TestTaskController_Find(t *testing.T) {
 		TaskName: "Broken light switches",
 		Type:     "Maintenance",
 		Notes:    "This is a note",
-		Status:   "Pending",
 	}
 
 	var createdTasks = []db.Task{createTask}
@@ -149,12 +148,13 @@ func TestTaskController_Find(t *testing.T) {
 
 	// Check the response status code
 	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v: %v\n Created: %v",
+			status, http.StatusOK, rr.Body.String(), createdTasks[0])
 	}
 	// Extract the response body
 	var body db.Task
 	json.Unmarshal(rr.Body.Bytes(), &body)
+
 	checkTaskDetails(&body, &createdTasks[0], t, true)
 
 	// Cleanup
