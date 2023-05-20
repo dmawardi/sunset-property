@@ -31,6 +31,7 @@ func DbConnect() *gorm.DB {
 	db.AutoMigrate(&Contact{})
 	db.AutoMigrate(&Task{})
 	db.AutoMigrate(&TaskLog{})
+	db.AutoMigrate(&Transaction{})
 
 	return db
 }

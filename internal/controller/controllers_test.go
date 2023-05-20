@@ -35,6 +35,7 @@ type TestDbRepo struct {
 	contacts     contactDB
 	tasks        taskDB
 	taskLogs     taskLogDB
+	transactions transactionDB
 	router       http.Handler
 	// For authentication mocking
 	accounts userAccounts
@@ -84,6 +85,13 @@ type taskLogDB struct {
 	cont controller.TaskLogController
 }
 
+// Types of tasks
+type transactionDB struct {
+	repo repository.TransactionRepository
+	serv service.TransactionService
+	cont controller.TransactionController
+}
+
 // Account structures
 type userAccounts struct {
 	admin dummyAccount
@@ -124,7 +132,14 @@ func TestMain(m *testing.M) {
 // Builds new API using routes packages
 func (t TestDbRepo) buildAPI() http.Handler {
 	api := routes.NewApi(
-		t.users.cont, t.properties.cont, t.features.cont, t.propertyLogs.cont, t.contacts.cont, t.tasks.cont, t.taskLogs.cont,
+		t.users.cont,
+		t.properties.cont,
+		t.features.cont,
+		t.propertyLogs.cont,
+		t.contacts.cont,
+		t.tasks.cont,
+		t.taskLogs.cont,
+		t.transactions.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -187,6 +202,11 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.tasks.serv = service.NewTaskService(t.tasks.repo)
 	t.tasks.cont = controller.NewTaskController(t.tasks.serv, t.taskLogs.serv)
 
+	// Transactions
+	t.transactions.repo = repository.NewTransactionRepository(t.dbClient)
+	t.transactions.serv = service.NewTransactionService(t.transactions.repo)
+	t.transactions.cont = controller.NewTransactionController(t.transactions.serv)
+
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)
 }
@@ -200,7 +220,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 

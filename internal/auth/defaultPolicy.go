@@ -138,4 +138,19 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/task-logs", action: "delete",
 	},
+
+	// api/transactions
+	// admin
+	{
+		subject: "admin", object: "/api/transactions", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/transactions", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/transactions", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/transactions", action: "delete",
+	},
 }

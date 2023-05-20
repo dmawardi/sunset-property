@@ -43,8 +43,11 @@ type Property struct {
 	Land_Metric      string         `json:"land_metric"`
 	Description      string         `json:"description"`
 	Notes            string         `json:"notes"`
+	Managed          bool           `json:"managed" gorm:"default:false"`
 	// One to many
 	PropertyLogs []PropertyLog `json:"property_logs" gorm:"foreignKey:PropertyID"`
+	Transactions []Transaction `json:"transactions" gorm:"foreignKey:PropertyID"`
+
 	// Many to many
 	Features []Feature `json:"features" gorm:"many2many:prop_features"`
 	Contacts []Contact `json:"contacts" gorm:"many2many:contact_properties"`
@@ -88,8 +91,8 @@ type Contact struct {
 	Mobile       string         `json:"mobile"`
 	ContactNotes string         `json:"notes"`
 	// Relationships
-	Properties []Property `json:"properties" gorm:"many2many:contact_properties"`
-	// Transactions []Transaction `json:"transactions" gorm:"many2many:contact_transactions"`
+	Properties   []Property    `json:"properties" gorm:"many2many:contact_properties"`
+	Transactions []Transaction `json:"transactions" gorm:"many2many:contact_transactions"`
 	// Vendors []Vendor `json:"vendors" gorm:"many2many:contact_vendors"`
 }
 
@@ -114,10 +117,9 @@ type Task struct {
 	Assignment []User `json:"assignment,omitempty" gorm:"many2many:user_tasks"`
 	// One to many
 	Log []TaskLog `json:"log,omitempty" gorm:"foreignKey:TaskID"`
-	// Note: Relationship between tasks and properties are handled within transactions
 	// One to one
-	// TransactionID uint     `json:"property_id,omitempty"`
-	// Transaction   Transaction `json:"property,omitempty" gorm:"foreignKey:TransactionID"`
+	// Note: Relationship between tasks and properties are handled within transactions
+	Transaction Transaction `json:"transaction,omitempty" gorm:"foreignKey:TaskID"`
 }
 
 type TaskLog struct {
@@ -137,18 +139,28 @@ type TaskLog struct {
 
 // Types of tasks: Transactions, Maintenance Requests, Inspections, Appraisals, Other
 // Transactions
-// type Transaction struct {
-// 	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
-// 	CreatedAt time.Time      `json:"created_at,omitempty"`
-// 	UpdatedAt time.Time      `json:"updated_at,omitempty"`
-// 	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
-// 	Type      string         `json:"type,omitempty" gorm:"not null"`
-// 	Agency    string         `json:"agency,omitempty" gorm:"not null"`
-// 	Status    string         `json:"status,omitempty" gorm:"not null"`
-// 	Notes     string         `json:"notes,omitempty"`
-// 	// Many to one (requires uint for key and Property for object data)
-// 	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
-// 	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
-// 	// Many to many
-// 	Contacts []Contact `json:"contacts,omitempty" gorm:"many2many:contact_transactions"`
-// }
+type Transaction struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	// Required fields
+	Type    string `json:"type,omitempty" gorm:"not null;enum:Sale,Lease,Management,Other"`
+	Agency  string `json:"agency,omitempty" gorm:"not null;enum:Own,Other"`
+	IsLease bool   `json:"is_lease,omitempty" gorm:"default:false"`
+	// Optional fields
+	TenancyType           string    `json:"tenancy_type,omitempty" gorm:"enum:Monthly,LongTerm,ShortTerm,Commercial,NA"`
+	AgencyName            string    `json:"agency_name,omitempty" gorm:""`
+	TransactionNotes      string    `json:"transaction_notes,omitempty" gorm:"default:null"`
+	TransactionValue      float64   `json:"transaction_value,omitempty" gorm:"default:null"`
+	TransactionCompletion time.Time `json:"transaction_completion,omitempty" gorm:"default:null"`
+	Fee                   float32   `json:"fee,omitempty" gorm:"default:null"`
+
+	// Many to one (requires uint for key and Property for object data)
+	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
+	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
+	// Many to many
+	Contacts []Contact `json:"contacts,omitempty" gorm:"many2many:contact_transactions"`
+	// One to one
+	TaskID uint `json:"task_id,omitempty" gorm:"unique;not null"`
+}

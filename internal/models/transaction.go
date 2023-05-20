@@ -6,36 +6,35 @@ import (
 	"github.com/dmawardi/Go-Template/internal/db"
 )
 
-// CreateTransaction is used to create a transaction
 type CreateTransaction struct {
 	// Required fields
-	// Limit values to: buy, sell, rent, lease
-	Type string `json:"type,omitempty" valid:"required, in(buy, sell, rent, lease)"`
-	// Limit values to: own, other
-	Agency string `json:"agency,omitempty" valid:"required, in(own, other), length(2|36)"`
-	// Limit values to: created, open, pending, cancelled, processing, active, completed, archived
-	Status string `json:"status,omitempty" valid:"required, length(2|36), in(created, open, pending, cancelled, processing, active, completed, archived)"`
+	Type   string `json:"type,omitempty" valid:"required,in(Sale|Lease|Management|Other)"`
+	Agency string `json:"agency,omitempty" valid:"required,in(Own|Other)"`
+	// Optional fields
+	IsLease          bool    `json:"is_lease,omitempty" valid:"bool"`
+	TenancyType      string  `json:"tenancy_type,omitempty" valid:"in(Monthly|LongTerm|ShortTerm|Commercial|NA)"`
+	AgencyName       string  `json:"agency_name,omitempty" valid:"length(2|36)"`
+	TransactionNotes string  `json:"transaction_notes,omitempty" valid:"length(5|320)"`
+	TransactionValue float64 `json:"transaction_value,omitempty" valid:"float"`
+	Fee              float32 `json:"fee,omitempty" valid:"float"`
 
-	// Task fields
-	Snoozed     bool      `json:"snoozed,omitempty" valid:"bool"`
-	SnoozedTill time.Time `json:"snoozed_till,omitempty" valid:"time"`
-
-	// Relationships
-	// Many to one (requires uint for key and Property for object data)
+	// Relationships (Not editable through update)
 	Property db.Property `json:"property,omitempty" valid:"required"`
+	Task     db.Task     `json:"task,omitempty" valid:"required"`
 }
-
-// UpdateTransaction is used to update a transaction (note: Property cannot be updated)
 type UpdateTransaction struct {
-	// Required fields
-	// Limit values to: buy, sell, rent, lease
-	Type string `json:"type,omitempty" valid:"required, in(buy, sell, rent, lease)"`
-	// Limit values to: own, other
-	Agency string `json:"agency,omitempty" valid:"required, in(own, other), length(2|36)"`
-	// Limit values to: created, open, pending, cancelled, processing, active, completed, archived
-	Status string `json:"status,omitempty" valid:"length(2|36), in(created, open, pending, cancelled, processing, active, completed, archived)"`
+	Type   string `json:"type,omitempty" valid:"in(Sale|Lease|Management|Other)"`
+	Agency string `json:"agency,omitempty" valid:"in(Own|Other)"`
+	// Optional fields
+	IsLease          bool    `json:"is_lease,omitempty" valid:"bool"`
+	TenancyType      string  `json:"tenancy_type,omitempty" valid:"in(Monthly|LongTerm|ShortTerm|Commercial|NA)"`
+	AgencyName       string  `json:"agency_name,omitempty" valid:"length(2|36)"`
+	TransactionNotes string  `json:"transaction_notes,omitempty" valid:"length(5|320)"`
+	TransactionValue float64 `json:"transaction_value,omitempty" valid:"float"`
+	Fee              float32 `json:"fee,omitempty" valid:"float"`
+	// Editable only through update
+	TransactionCompletion time.Time `json:"transaction_completion,omitempty" valid:"time"`
 
-	// Relationships
-	// Many to many
+	// Relationships (Can only update contacts)
 	Contacts []db.Contact `json:"contacts,omitempty"`
 }
