@@ -11,8 +11,8 @@ type CreateTransaction struct {
 	Type   string `json:"type,omitempty" valid:"required,in(Sale|Lease|Management|Other)"`
 	Agency string `json:"agency,omitempty" valid:"required,in(Own|Other)"`
 	// Optional fields
-	IsLease          bool    `json:"is_lease,omitempty" valid:"bool"`
 	TenancyType      string  `json:"tenancy_type,omitempty" valid:"in(Monthly|LongTerm|ShortTerm|Commercial|NA)"`
+	IsLease          bool    `json:"is_lease,omitempty" valid:"bool"`
 	AgencyName       string  `json:"agency_name,omitempty" valid:"length(2|36)"`
 	TransactionNotes string  `json:"transaction_notes,omitempty" valid:"length(5|320)"`
 	TransactionValue float64 `json:"transaction_value,omitempty" valid:"float"`

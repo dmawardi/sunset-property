@@ -509,7 +509,7 @@ func checkTaskLogDetails(actual *db.TaskLog, expected *db.TaskLog, t *testing.T,
 	if checkId == true {
 		// Verify that the actual task log message id matches the created task log message id
 		if actual.ID != expected.ID {
-			t.Errorf("found feature has incorrect ID: expected %d, got %d", expected.ID, actual.ID)
+			t.Errorf("found task log message has incorrect ID: expected %d, got %d", expected.ID, actual.ID)
 		}
 	}
 
