@@ -16,14 +16,15 @@ type Api interface {
 }
 
 type api struct {
-	user        controller.UserController
-	property    controller.PropertyController
-	feature     controller.FeatureController
-	propertyLog controller.PropertyLogController
-	contact     controller.ContactController
-	task        controller.TaskController
-	taskLog     controller.TaskLogController
-	transaction controller.TransactionController
+	user               controller.UserController
+	property           controller.PropertyController
+	feature            controller.FeatureController
+	propertyLog        controller.PropertyLogController
+	contact            controller.ContactController
+	task               controller.TaskController
+	taskLog            controller.TaskLogController
+	transaction        controller.TransactionController
+	maintenanceRequest controller.MaintenanceRequestController
 }
 
 func NewApi(user controller.UserController,
@@ -33,8 +34,9 @@ func NewApi(user controller.UserController,
 	contact controller.ContactController,
 	task controller.TaskController,
 	taskLog controller.TaskLogController,
-	trans controller.TransactionController) Api {
-	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans}
+	trans controller.TransactionController,
+	maintenance controller.MaintenanceRequestController) Api {
+	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance}
 }
 
 func (a api) Routes() http.Handler {
@@ -120,6 +122,13 @@ func (a api) Routes() http.Handler {
 			mux.Get("/api/transactions/{id}", a.transaction.Find)
 			mux.Put("/api/transactions/{id}", a.transaction.Update)
 			mux.Delete("/api/transactions/{id}", a.transaction.Delete)
+
+			// Maintenance requests
+			mux.Post("/api/maintenance", a.maintenanceRequest.Create)
+			mux.Get("/api/maintenance", a.maintenanceRequest.FindAll)
+			mux.Get("/api/maintenance/{id}", a.maintenanceRequest.Find)
+			mux.Put("/api/maintenance/{id}", a.maintenanceRequest.Update)
+			mux.Delete("/api/maintenance/{id}", a.maintenanceRequest.Delete)
 
 		})
 

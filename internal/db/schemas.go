@@ -119,7 +119,8 @@ type Task struct {
 	Log []TaskLog `json:"log,omitempty" gorm:"foreignKey:TaskID"`
 	// One to one
 	// Note: Relationship between tasks and properties are handled within transactions
-	Transaction Transaction `json:"transaction,omitempty" gorm:"foreignKey:TaskID"`
+	Transaction        Transaction        `json:"transaction,omitempty" gorm:"foreignKey:TaskID"`
+	MaintenanceRequest MaintenanceRequest `json:"maintenance_request,omitempty" gorm:"foreignKey:TaskID"`
 }
 
 type TaskLog struct {
@@ -163,4 +164,28 @@ type Transaction struct {
 	Contacts []Contact `json:"contacts,omitempty" gorm:"many2many:contact_transactions"`
 	// One to one
 	TaskID uint `json:"task_id,omitempty" gorm:"unique;not null"`
+}
+
+type MaintenanceRequest struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	// Required fields
+	WorkDefinition string  `json:"work_definition,omitempty" gorm:"not null;enum:Repair,Replacement,Project,Investigation,Pest Control,Other"`
+	Type           string  `json:"type,omitempty" gorm:"not null;enum:Electrical,Plumbing,Painting,HVAC,Civil,Other"`
+	Notes          string  `json:"notes,omitempty" gorm:"default:null"`
+	Scale          string  `json:"scale,omitempty" gorm:"not null;enum:Urgent,High,Medium,Low"`
+	TotalCost      float64 `json:"cost,omitempty" gorm:"default:null"`
+	Tax            float64 `json:"tax,omitempty" gorm:"default:null"`
+
+	// Relationships
+	// Many to one (requires uint for key and Property for object data)
+	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
+	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
+	// One to one
+	TaskID uint `json:"task_id,omitempty" gorm:"not null"`
+	// One to many
+	// VendorID uint `json:"vendor_id,omitempty" gorm:""`
+	// Vendor Vendor `json:"vendor_id,omitempty" gorm:""`
 }

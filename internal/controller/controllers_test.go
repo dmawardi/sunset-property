@@ -27,16 +27,17 @@ var testConnection TestDbRepo
 var app config.AppConfig
 
 type TestDbRepo struct {
-	dbClient     *gorm.DB
-	users        userDB
-	properties   propertyDB
-	features     featureDB
-	propertyLogs propertyLogDB
-	contacts     contactDB
-	tasks        taskDB
-	taskLogs     taskLogDB
-	transactions transactionDB
-	router       http.Handler
+	dbClient           *gorm.DB
+	users              userDB
+	properties         propertyDB
+	features           featureDB
+	propertyLogs       propertyLogDB
+	contacts           contactDB
+	tasks              taskDB
+	taskLogs           taskLogDB
+	transactions       transactionDB
+	maintenanceRequest maintenanceRequestDB
+	router             http.Handler
 	// For authentication mocking
 	accounts userAccounts
 }
@@ -92,6 +93,12 @@ type transactionDB struct {
 	cont controller.TransactionController
 }
 
+type maintenanceRequestDB struct {
+	repo repository.MaintenanceRequestRepository
+	serv service.MaintenanceRequestService
+	cont controller.MaintenanceRequestController
+}
+
 // Account structures
 type userAccounts struct {
 	admin dummyAccount
@@ -140,6 +147,7 @@ func (t TestDbRepo) buildAPI() http.Handler {
 		t.tasks.cont,
 		t.taskLogs.cont,
 		t.transactions.cont,
+		t.maintenanceRequest.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -206,6 +214,11 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.transactions.repo = repository.NewTransactionRepository(t.dbClient)
 	t.transactions.serv = service.NewTransactionService(t.transactions.repo)
 	t.transactions.cont = controller.NewTransactionController(t.transactions.serv)
+
+	// Maintenance Requests
+	t.maintenanceRequest.repo = repository.NewMaintenanceRequestRepository(t.dbClient)
+	t.maintenanceRequest.serv = service.NewMaintenanceRequestService(t.maintenanceRequest.repo)
+	t.maintenanceRequest.cont = controller.NewMaintenanceRequestController(t.maintenanceRequest.serv)
 
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)

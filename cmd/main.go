@@ -135,7 +135,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	transactionService := service.NewTransactionService(transactionRepo)
 	transactionController := controller.NewTransactionController(transactionService)
 
+	// Maintenance requests
+	maintenanceRepo := repository.NewMaintenanceRequestRepository(client)
+	maintenanceService := service.NewMaintenanceRequestService(maintenanceRepo)
+	maintenanceController := controller.NewMaintenanceRequestController(maintenanceService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController)
+	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController, maintenanceController)
 	return api
 }
