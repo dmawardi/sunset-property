@@ -62,7 +62,7 @@ func (r *taskRepository) FindById(id int) (*db.Task, error) {
 	// Create an empty ref object of type task
 	task := db.Task{}
 	// Check if task exists in db
-	result := r.DB.Preload("Assignment").Preload("Log.User").First(&task, id)
+	result := r.DB.Preload("Assignment").Preload("Log.User").Preload("Transaction").Preload("MaintenanceRequest").First(&task, id)
 
 	// Extract error result
 	err := result.Error

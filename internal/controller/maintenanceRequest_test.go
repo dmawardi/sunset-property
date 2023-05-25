@@ -11,11 +11,11 @@ import (
 	"github.com/dmawardi/Go-Template/internal/models"
 )
 
-func TestTransactionController_FindAll(t *testing.T) {
+func TestMaintenanceController_FindAll(t *testing.T) {
 	// Test setup
 	// Create property
 	propertyToCreate := &db.Property{
-		Property_Name:    "Test Property3",
+		Property_Name:    "maintenanceProperty1",
 		Postcode:         80361,
 		Suburb:           "Test Suburb",
 		City:             "Test City",
@@ -28,56 +28,50 @@ func TestTransactionController_FindAll(t *testing.T) {
 	createdProperties := []db.Property{*propertyToCreate}
 	createResult := testConnection.dbClient.Create(createdProperties)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create properties for maintenance find all test: ", createResult.Error)
 	}
 	// Create task
 	taskToCreate1 := &db.Task{
 		TaskName: "Test Task",
-		Type:     "Transaction",
+		Type:     "Maintenance",
 		Notes:    "Yohoo",
 	}
 	taskToCreate2 := &db.Task{
 		TaskName: "Test Task 2",
-		Type:     "Transaction",
+		Type:     "Maintenance",
 		Notes:    "Yohoo",
 	}
 	createdTasks := []db.Task{*taskToCreate1, *taskToCreate2}
 	createResult = testConnection.dbClient.Create(createdTasks)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create tasks for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create tasks for maintenance find all test: ", createResult.Error)
 	}
-	// Create transactions
-	transactionToCreate1 := &db.Transaction{
-		TaskID:           createdTasks[0].ID,
-		Type:             "Transaction",
-		Agency:           "Own",
-		AgencyName:       "Test Agency Name",
-		IsLease:          true,
-		Fee:              3.5,
-		TransactionNotes: "This is a note",
-		TenancyType:      "Monthly",
-		Property:         db.Property{ID: createdProperties[0].ID},
+	// Create maintenance requests
+	requestToCreate1 := &db.MaintenanceRequest{
+		Scale:          "Urgent",
+		WorkDefinition: "Repair",
+		Type:           "Electrical",
+		Notes:          "Marketing team absolutely sucks",
+		Property:       createdProperties[0],
+		TaskID:         createdTasks[0].ID,
 	}
-	transactionToCreate2 := &db.Transaction{
-		TaskID:           createdTasks[1].ID,
-		Type:             "Transaction",
-		Agency:           "Own",
-		AgencyName:       "Test Agency Name",
-		IsLease:          true,
-		Fee:              3.5,
-		TransactionNotes: "This is a note",
-		TenancyType:      "Monthly",
-		Property:         *propertyToCreate,
+	requestToCreate2 := &db.MaintenanceRequest{
+		Scale:          "Urgent",
+		WorkDefinition: "Repair",
+		Type:           "Electrical",
+		Notes:          "Marketing team absolutely sucks",
+		Property:       createdProperties[0],
+		TaskID:         createdTasks[1].ID,
 	}
-	createdTransactions := []db.Transaction{*transactionToCreate1, *transactionToCreate2}
+	createdRequests := []db.MaintenanceRequest{*requestToCreate1, *requestToCreate2}
 	// Create task logs in db
-	createResult = testConnection.dbClient.Create(createdTransactions)
+	createResult = testConnection.dbClient.Create(&createdRequests)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create transactions for transactions find all test: ", createResult.Error)
+		t.Fatal("Failed to create maintenance requests for maintenance find all test: ", createResult.Error)
 	}
 
 	// Create a new request
-	req, err := http.NewRequest("GET", "/api/transactions?limit=10&offset=0&order=", nil)
+	req, err := http.NewRequest("GET", "/api/maintenance?limit=10&offset=0&order=", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,22 +90,23 @@ func TestTransactionController_FindAll(t *testing.T) {
 	}
 
 	// Convert response JSON to struct
-	var body []db.Transaction
+	var body []db.MaintenanceRequest
 	json.Unmarshal(rr.Body.Bytes(), &body)
 
 	// Check length of array (should be two with seeded assets)
-	if len(body) != len(createdTransactions) {
-		t.Errorf("Array length check in findAll failed: expected %d, got %d", len(createdTransactions), len(body))
+	if len(body) != len(createdRequests) {
+		t.Errorf("Array length check in findAll failed: expected %d, got %d", len(createdRequests), len(body))
 	}
 
 	// Iterate through array received
-	for _, actualTrans := range body {
+	for _, actualRequest := range body {
 		// Iterate through created transactions to determine a match
-		for _, createdTrans := range createdTransactions {
+		for _, createdRequest := range createdRequests {
 			// If match found
-			if actualTrans.ID == createdTrans.ID {
+			if actualRequest.ID == createdRequest.ID {
 				// Check the details of the transaction match
-				checkTransactionDetails(&actualTrans, &createdTrans, t, true)
+				// t.Fatal("Maintenance request details check failed:", createdRequests)
+				checkMaintenanceRequestDetails(&actualRequest, &createdRequest, t, false)
 			}
 		}
 	}
@@ -133,7 +128,7 @@ func TestTransactionController_FindAll(t *testing.T) {
 	}
 	// Iterate through URL parameter tests
 	for _, v := range failParameterTests {
-		request := fmt.Sprintf("/api/transactions?limit=%v&offset=%v&order=%v", v.limit, v.offset, v.order)
+		request := fmt.Sprintf("/api/maintenance?limit=%v&offset=%v&order=%v", v.limit, v.offset, v.order)
 		// Create a new request
 		req, err := http.NewRequest("GET", request, nil)
 		if err != nil {
@@ -155,9 +150,9 @@ func TestTransactionController_FindAll(t *testing.T) {
 	}
 
 	// Clean up created fixtures
-	deleteResult := testConnection.dbClient.Delete(createdTransactions)
+	deleteResult := testConnection.dbClient.Delete(createdRequests)
 	if deleteResult.Error != nil {
-		t.Fatalf("Couldn't clean up seeded transactions: %v", deleteResult.Error)
+		t.Fatalf("Couldn't clean up seeded maintenance requests: %v", deleteResult.Error)
 	}
 	deleteResult = testConnection.dbClient.Delete(createdTasks)
 	if deleteResult.Error != nil {
@@ -169,11 +164,11 @@ func TestTransactionController_FindAll(t *testing.T) {
 	}
 }
 
-func TestTransactionController_Find(t *testing.T) {
+func TestMaintenanceController_Find(t *testing.T) {
 	// Test setup
 	// Create property
 	propertyToCreate := &db.Property{
-		Property_Name:    "Test Property",
+		Property_Name:    "Maintenance Property",
 		Postcode:         80361,
 		Suburb:           "Test Suburb",
 		City:             "Test City",
@@ -186,40 +181,37 @@ func TestTransactionController_Find(t *testing.T) {
 	createdProperties := []db.Property{*propertyToCreate}
 	createResult := testConnection.dbClient.Create(createdProperties)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create properties for test: ", createResult.Error)
 	}
 	// Create task
 	taskToCreate1 := &db.Task{
 		TaskName: "Test Task",
-		Type:     "Transaction",
+		Type:     "Maintenance",
 		Notes:    "Yohoo",
 	}
 	createdTasks := []db.Task{*taskToCreate1}
 	createResult = testConnection.dbClient.Create(createdTasks)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create tasks for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create tasks for test: ", createResult.Error)
 	}
-	// Create transactions
-	transactionToCreate1 := &db.Transaction{
-		TaskID:           createdTasks[0].ID,
-		Type:             "Transaction",
-		Agency:           "Own",
-		AgencyName:       "Test Agency Name",
-		IsLease:          true,
-		Fee:              3.5,
-		TransactionNotes: "This is a note",
-		TenancyType:      "Monthly",
-		Property:         db.Property{ID: createdProperties[0].ID},
+	// Create maintenance request
+	requestToCreate1 := &db.MaintenanceRequest{
+		Scale:          "Urgent",
+		WorkDefinition: "Repair",
+		Type:           "Electrical",
+		Notes:          "Marketing team absolutely sucks",
+		Property:       createdProperties[0],
+		TaskID:         createdTasks[0].ID,
 	}
-	createdTransactions := []db.Transaction{*transactionToCreate1}
+	createdRequests := []db.MaintenanceRequest{*requestToCreate1}
 	// Create task logs in db
-	createResult = testConnection.dbClient.Create(createdTransactions)
+	createResult = testConnection.dbClient.Create(createdRequests)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create transactions for transactions find all test: ", createResult.Error)
+		t.Fatal("Failed to create requests for test: ", createResult.Error)
 	}
 
 	// Create a request with an "id" URL parameter
-	requestUrl := fmt.Sprintf("/api/transactions/%v", createdTransactions[0].ID)
+	requestUrl := fmt.Sprintf("/api/maintenance/%v", createdRequests[0].ID)
 	req, err := http.NewRequest("GET", requestUrl, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -240,15 +232,15 @@ func TestTransactionController_Find(t *testing.T) {
 	}
 
 	// Extract the response body
-	var body db.Transaction
+	var body db.MaintenanceRequest
 	json.Unmarshal(rr.Body.Bytes(), &body)
-	checkTransactionDetails(&body, &createdTransactions[0], t, true)
+	checkMaintenanceRequestDetails(&body, &createdRequests[0], t, true)
 
 	// Cleanup
 	// Delete the created fixtures
-	deleteResult := testConnection.dbClient.Delete(createdTransactions)
+	deleteResult := testConnection.dbClient.Delete(createdRequests)
 	if deleteResult.Error != nil {
-		t.Fatalf("Couldn't clean up seeded transactions: %v", deleteResult.Error)
+		t.Fatalf("Couldn't clean up seeded maintenance requests: %v", deleteResult.Error)
 	}
 	deleteResult = testConnection.dbClient.Delete(createdTasks)
 	if deleteResult.Error != nil {
@@ -260,11 +252,11 @@ func TestTransactionController_Find(t *testing.T) {
 	}
 }
 
-func TestTransactionController_Delete(t *testing.T) {
+func TestMaintenanceController_Delete(t *testing.T) {
 	// Test setup
 	// Create property
 	propertyToCreate := &db.Property{
-		Property_Name:    "Test Property2",
+		Property_Name:    "Maintenance Property 2",
 		Postcode:         80361,
 		Suburb:           "Test Suburb",
 		City:             "Test City",
@@ -277,40 +269,37 @@ func TestTransactionController_Delete(t *testing.T) {
 	createdProperties := []db.Property{*propertyToCreate}
 	createResult := testConnection.dbClient.Create(createdProperties)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create properties for test: ", createResult.Error)
 	}
 	// Create task
 	taskToCreate1 := &db.Task{
 		TaskName: "Test Task",
-		Type:     "Transaction",
+		Type:     "Maintenance",
 		Notes:    "Yohoo",
 	}
 	createdTasks := []db.Task{*taskToCreate1}
 	createResult = testConnection.dbClient.Create(createdTasks)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create tasks for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create tasks for test: ", createResult.Error)
 	}
 	// Create transactions
-	transactionToCreate1 := &db.Transaction{
-		TaskID:           createdTasks[0].ID,
-		Type:             "Transaction",
-		Agency:           "Own",
-		AgencyName:       "Test Agency Name",
-		IsLease:          true,
-		Fee:              3.5,
-		TransactionNotes: "This is a note",
-		TenancyType:      "Monthly",
-		Property:         db.Property{ID: createdProperties[0].ID},
+	requestToCreate1 := &db.MaintenanceRequest{
+		Scale:          "Urgent",
+		WorkDefinition: "Repair",
+		Type:           "Electrical",
+		Notes:          "Marketing team absolutely sucks",
+		Property:       createdProperties[0],
+		TaskID:         createdTasks[0].ID,
 	}
-	createdTransactions := []db.Transaction{*transactionToCreate1}
+	createdRequests := []db.MaintenanceRequest{*requestToCreate1}
 	// Create task logs in db
-	createResult = testConnection.dbClient.Create(createdTransactions)
+	createResult = testConnection.dbClient.Create(createdRequests)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create transactions for transactions find all test: ", createResult.Error)
+		t.Fatal("Failed to create maintenance requests for test: ", createResult.Error)
 	}
 
 	// Create a request with an "id" URL parameter
-	requestUrl := fmt.Sprintf("/api/transactions/%v", createdTransactions[0].ID)
+	requestUrl := fmt.Sprintf("/api/maintenance/%v", createdRequests[0].ID)
 	req, err := http.NewRequest("DELETE", requestUrl, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -345,9 +334,9 @@ func TestTransactionController_Delete(t *testing.T) {
 	}
 	// Cleanup
 	// Delete the created fixtures
-	deleteResult := testConnection.dbClient.Delete(createdTransactions)
+	deleteResult := testConnection.dbClient.Delete(createdRequests)
 	if deleteResult.Error != nil {
-		t.Fatalf("Couldn't clean up seeded transactions: %v", deleteResult.Error)
+		t.Fatalf("Couldn't clean up seeded maintenance requests: %v", deleteResult.Error)
 	}
 	deleteResult = testConnection.dbClient.Delete(createdTasks)
 	if deleteResult.Error != nil {
@@ -359,11 +348,11 @@ func TestTransactionController_Delete(t *testing.T) {
 	}
 }
 
-func TestTransactionController_Update(t *testing.T) {
+func TestMaintenanceController_Update(t *testing.T) {
 	// Test setup
 	// Create property
 	propertyToCreate := &db.Property{
-		Property_Name:    "Test Property4",
+		Property_Name:    "Maintenance Property 4",
 		Postcode:         80361,
 		Suburb:           "Test Suburb",
 		City:             "Test City",
@@ -376,74 +365,72 @@ func TestTransactionController_Update(t *testing.T) {
 	createdProperties := []db.Property{*propertyToCreate}
 	createResult := testConnection.dbClient.Create(createdProperties)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create properties for test: ", createResult.Error)
 	}
 	// Create task
 	taskToCreate1 := &db.Task{
 		TaskName: "Test Task",
-		Type:     "Transaction",
+		Type:     "Maintenance",
 		Notes:    "Yohoo",
 	}
 	createdTasks := []db.Task{*taskToCreate1}
 	createResult = testConnection.dbClient.Create(createdTasks)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create tasks for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create tasks for test: ", createResult.Error)
 	}
-	// Create transactions
-	transactionToCreate1 := &db.Transaction{
-		TaskID:           createdTasks[0].ID,
-		Type:             "Transaction",
-		Agency:           "Own",
-		AgencyName:       "Test Agency Name",
-		IsLease:          true,
-		Fee:              3.5,
-		TransactionNotes: "This is a note",
-		TenancyType:      "Monthly",
-		Property:         db.Property{ID: createdProperties[0].ID},
+	// Create maintenance request
+	requestToCreate1 := &db.MaintenanceRequest{
+		Scale:          "Urgent",
+		WorkDefinition: "Repair",
+		Type:           "Electrical",
+		Notes:          "Marketing team absolutely sucks",
+		Property:       createdProperties[0],
+		TaskID:         createdTasks[0].ID,
 	}
-	createdTransactions := []db.Transaction{*transactionToCreate1}
-	createResult = testConnection.dbClient.Create(createdTransactions)
+	createdRequests := []db.MaintenanceRequest{*requestToCreate1}
+	createResult = testConnection.dbClient.Create(&createdRequests)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create transactions for transactions find all test: ", createResult.Error)
+		t.Fatal("Failed to create maintenance request for test: ", createResult.Error)
 	}
 
 	// Build test array
 	var updateTests = []struct {
-		data                   models.UpdateTransaction
+		data                   models.UpdateMaintenanceRequest
 		tokenToUse             string
 		expectedResponseStatus int
 		checkDetails           bool
+		testName               string
 	}{
 		// Test of update failure: basic user
-		{models.UpdateTransaction{
-			Fee:              4.5,
-			TransactionValue: 35000000,
-		}, testConnection.accounts.user.token, http.StatusForbidden, false},
+		{models.UpdateMaintenanceRequest{
+			Type: "HVAC",
+		}, testConnection.accounts.user.token, http.StatusForbidden, false, "Basic user update test"},
 		// Update should be allowed: admin
-		{models.UpdateTransaction{
-			Fee:              4.5,
-			TransactionValue: 35000000,
-		}, testConnection.accounts.admin.token, http.StatusOK, true},
-		// Update should be disallowed due to being invalid value for agency
-		{models.UpdateTransaction{
-			Agency:           "Insane",
-			Fee:              4.5,
-			TransactionValue: 35000000,
-		}, testConnection.accounts.admin.token, http.StatusBadRequest, false},
+		{models.UpdateMaintenanceRequest{
+			Type: "HVAC",
+		}, testConnection.accounts.admin.token, http.StatusOK, true, "Admin update test"},
 		// Update should be disallowed due to being invalid value for type
-		{models.UpdateTransaction{
-			Type:             "Insane",
-			Fee:              4.5,
-			TransactionValue: 35000000,
-		}, testConnection.accounts.admin.token, http.StatusBadRequest, false},
+		{models.UpdateMaintenanceRequest{
+			Type: "Sales",
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Invalid type update test"},
+		// Update should be disallowed due to being invalid value for work definition
+		{models.UpdateMaintenanceRequest{
+			WorkDefinition: "Solitude",
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Invalid work definition update test"},
+		// Update should be disallowed due to being invalid value for scale
+		{models.UpdateMaintenanceRequest{
+			Scale: "Beyond",
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Invalid scale update test"},
 		// User should be forbidden before validating rather than Bad Request
-		{models.UpdateTransaction{
-			Type: "Insane",
-		}, testConnection.accounts.user.token, http.StatusForbidden, false},
+		{models.UpdateMaintenanceRequest{
+			Type: "Squalor",
+		}, testConnection.accounts.user.token, http.StatusForbidden, false, "Invalid type update when basic user test"},
 	}
 
+	// t.Errorf("Created Requests: %v", createdRequests)
 	// Create a request url with an "id" URL parameter
-	requestUrl := fmt.Sprintf("/api/transactions/%v", createdTransactions[0].ID)
+	requestUrl := fmt.Sprintf("/api/maintenance/%v", createdRequests[0].ID)
+	fmt.Printf("Request URL: %v", requestUrl)
 
 	// Iterate through update tests
 	for _, v := range updateTests {
@@ -460,25 +447,25 @@ func TestTransactionController_Update(t *testing.T) {
 		testConnection.router.ServeHTTP(rr, req)
 
 		// Convert response JSON to struct
-		var body db.Transaction
+		var body db.MaintenanceRequest
 		json.Unmarshal(rr.Body.Bytes(), &body)
+
 		// Check response expected vs received
 		if status := rr.Code; status != v.expectedResponseStatus {
-			t.Errorf("Update test: got %v want %v. \nBody: %v", status, v.expectedResponseStatus, body)
-
+			t.Errorf("Update test: got %v want %v. \nBody: %v", status, v.expectedResponseStatus, body.Scale)
 		}
 
 		// If need to check details
 		if v.checkDetails == true {
-			// Get task details from database
-			var expected db.Transaction
-			findResult := testConnection.dbClient.Find(&expected, createdTransactions[0].ID)
+			// Get maintenance request details from database
+			var expected db.MaintenanceRequest
+			findResult := testConnection.dbClient.Find(&expected, createdRequests[0].ID)
 			if findResult.Error != nil {
-				t.Errorf("Error finding updated transaction: %v", findResult.Error)
+				t.Errorf("Error finding updated maintenance request: %v", findResult.Error)
 			}
 
 			// Check task log details using updated object
-			checkTransactionDetails(&body, &expected, t, false)
+			checkMaintenanceRequestDetails(&body, &expected, t, false)
 		}
 	}
 
@@ -495,8 +482,8 @@ func TestTransactionController_Update(t *testing.T) {
 	}
 	for _, v := range failUpdateTests {
 		// Make new request with task log update in body
-		req, err := http.NewRequest("PUT", fmt.Sprint("/api/transactions/"+v.urlExtension), buildReqBody(&db.Transaction{
-			Agency: "Own",
+		req, err := http.NewRequest("PUT", fmt.Sprint("/api/maintenance/"+v.urlExtension), buildReqBody(&db.MaintenanceRequest{
+			Type: "HVAC",
 		}))
 		if err != nil {
 			t.Fatal(err)
@@ -517,9 +504,9 @@ func TestTransactionController_Update(t *testing.T) {
 
 	// Cleanup
 	// Delete the created fixtures
-	deleteResult := testConnection.dbClient.Delete(createdTransactions)
+	deleteResult := testConnection.dbClient.Delete(createdRequests)
 	if deleteResult.Error != nil {
-		t.Fatalf("Couldn't clean up seeded transactions: %v", deleteResult.Error)
+		t.Fatalf("Couldn't clean up seeded maintenance requests: %v", deleteResult.Error)
 	}
 	deleteResult = testConnection.dbClient.Delete(createdTasks)
 	if deleteResult.Error != nil {
@@ -531,12 +518,12 @@ func TestTransactionController_Update(t *testing.T) {
 	}
 }
 
-func TestTransactionController_Create(t *testing.T) {
+func TestMaintenanceController_Create(t *testing.T) {
 	// Setup
 	//
 	// Create property
 	propertyToCreate := &db.Property{
-		Property_Name:    "Test Property5",
+		Property_Name:    "Maintenance Property 5",
 		Postcode:         80361,
 		Suburb:           "Test Suburb",
 		City:             "Test City",
@@ -549,102 +536,85 @@ func TestTransactionController_Create(t *testing.T) {
 	createdProperties := []db.Property{*propertyToCreate}
 	createResult := testConnection.dbClient.Create(createdProperties)
 	if createResult.Error != nil {
-		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
+		t.Fatal("Failed to create properties for test: ", createResult.Error)
 	}
 
 	var createTests = []struct {
-		data                   models.CreateTransaction
+		data                   models.CreateMaintenanceRequest
 		expectedResponseStatus int
 		tokenToUse             string
+		testName               string
 	}{
 		// Should fail due to user role status of basic
-		{models.CreateTransaction{
-			Type:             "Sale",
-			Agency:           "Own",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "This is a note",
-			TenancyType:      "Monthly",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusForbidden, testConnection.accounts.user.token},
+		{models.CreateMaintenanceRequest{
+			Scale:          "Urgent",
+			WorkDefinition: "Repair",
+			Type:           "Electrical",
+			Notes:          "Marketing team absolutely sucks",
+			Property:       createdProperties[0],
+		}, http.StatusForbidden, testConnection.accounts.user.token, "basic user create"},
 		// Should pass as user is admin
-		{models.CreateTransaction{
-			Type:             "Sale",
-			Agency:           "Own",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "This is a note",
-			TenancyType:      "Monthly",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusCreated, testConnection.accounts.admin.token},
-		// Create should be disallowed due to invalid agency value
-		{models.CreateTransaction{
-			Type:             "Lease",
-			Agency:           "Sakra",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "This is a note",
-			TenancyType:      "Monthly",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusBadRequest, testConnection.accounts.admin.token},
+		{models.CreateMaintenanceRequest{
+			Scale:          "Urgent",
+			WorkDefinition: "Repair",
+			Type:           "Electrical",
+			Property:       createdProperties[0],
+			Notes:          "Ridiculous things",
+		}, http.StatusCreated, testConnection.accounts.admin.token, "admin create"},
+		// Create should be disallowed due to invalid scale value
+		{models.CreateMaintenanceRequest{
+			Scale:          "MadeUpScale",
+			WorkDefinition: "Repair",
+			Type:           "Electrical",
+			Notes:          "Waser team absolutely sucks",
+			Property:       createdProperties[0],
+		}, http.StatusBadRequest, testConnection.accounts.admin.token, "invalid scale create"},
 		// Create should be disallowed due to invalid type value
-		{models.CreateTransaction{
-			Type:             "Crazy",
-			Agency:           "Own",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "This is a note",
-			TenancyType:      "Monthly",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusBadRequest, testConnection.accounts.admin.token},
-		// Create should be disallowed due to invalid Tenancy type value
-		{models.CreateTransaction{
-			Type:             "Lease",
-			Agency:           "Own",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "This is a note",
-			TenancyType:      "Iglesias",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusBadRequest, testConnection.accounts.admin.token},
+		{models.CreateMaintenanceRequest{
+			Scale:          "Urgent",
+			WorkDefinition: "Repair",
+			Type:           "Trains",
+			Notes:          "Drover team absolutely sucks",
+			Property:       createdProperties[0],
+		}, http.StatusBadRequest, testConnection.accounts.admin.token, "invalid type create"},
+		// Create should be disallowed due to invalid work definition type value
+		{models.CreateMaintenanceRequest{
+			Scale:          "Urgent",
+			WorkDefinition: "Regulate",
+			Type:           "Electrical",
+			Notes:          "Marketing team absolutely sucks",
+			Property:       createdProperties[0],
+		}, http.StatusBadRequest, testConnection.accounts.admin.token, "invalid work definition create"},
 		// Create should be disallowed due to notes being too long
-		{models.CreateTransaction{
-			Type:             "Lease",
-			Agency:           "Own",
-			AgencyName:       "Test Agency Name",
-			IsLease:          false,
-			Fee:              3.5,
-			TransactionNotes: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse vulputate, nunc sit amet efficitur bibendum, sapien odio auctor nisi, a interdum magna nisl ac purus. Fusce condimentum malesuada mi at eleifend. Sed laoreet varius risus, id mattis libero tristique nec. Sed eget malesuada magna. Morbi feugiat sapien euismod neque commodo suscipit. Vivamus vehicula euismod dui, id imperdiet elit lacinia non. Integer hendrerit, enim ac gravida malesuada, dolor leo dictum purus, nec bibendum velit est vel nulla. Nulla sagittis nulla non elit imperdiet convallis. Sed bibendum sollicitudin nunc, vel facilisis nulla convallis a. Nunc id ex feugiat, finibus magna sit amet, ultricies lacus.",
-			TenancyType:      "Iglesias",
-			Property:         db.Property{ID: createdProperties[0].ID},
-		}, http.StatusBadRequest, testConnection.accounts.admin.token},
+		{models.CreateMaintenanceRequest{
+			Scale:          "Urgent",
+			WorkDefinition: "Repair",
+			Type:           "Electrical",
+			Notes:          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse vulputate, nunc sit amet efficitur bibendum, sapien odio auctor nisi, a interdum magna nisl ac purus. Fusce condimentum malesuada mi at eleifend. Sed laoreet varius risus, id mattis libero tristique nec. Sed eget malesuada magna. Morbi feugiat sapien euismod neque commodo suscipit. Vivamus vehicula euismod dui, id imperdiet elit lacinia non. Integer hendrerit, enim ac gravida malesuada, dolor leo dictum purus, nec bibendum velit est vel nulla. Nulla sagittis nulla non elit imperdiet convallis. Sed bibendum sollicitudin nunc, vel facilisis nulla convallis a. Nunc id ex feugiat, finibus magna sit amet, ultricies lacus.",
+			Property:       createdProperties[0],
+		}, http.StatusBadRequest, testConnection.accounts.admin.token, "invalid notes create"},
 	}
 
 	// Create a request url with an "id" URL parameter
-	requestUrl := "/api/transactions"
+	requestUrl := "/api/maintenance"
 
 	for _, v := range createTests {
 		// Each create test setup
 		// Create task (for each test)
 		taskToCreate1 := &db.Task{
 			TaskName: "Test Task",
-			Type:     "Transaction",
+			Type:     "Maintenance",
 			Notes:    "Yohoo",
 		}
 		createdTasks := []db.Task{*taskToCreate1}
 		createResult = testConnection.dbClient.Create(createdTasks)
 		if createResult.Error != nil {
-			t.Fatal("Failed to create tasks for transaction create test: ", createResult.Error)
+			t.Fatal("Failed to create tasks for test: ", createResult.Error)
 		}
-		// Update v.data to include newly created task ID
-		v.data.Task.ID = createdTasks[0].ID
+		// Update v.data to include newly created task
+		v.data.Task = createdTasks[0]
 
-		// Make new request with transaction creation in body
+		// Make new request with maintenance request creation in body
 		req, err := http.NewRequest("POST", requestUrl, buildReqBody(v.data))
 		if err != nil {
 			t.Fatal(err)
@@ -658,36 +628,36 @@ func TestTransactionController_Create(t *testing.T) {
 		testConnection.router.ServeHTTP(rr, req)
 		// Check response is as expected
 		if status := rr.Code; status != v.expectedResponseStatus {
-			t.Errorf("response test (%v): got %v want %v. \nBody: %v\n", v.data.Type,
+			t.Errorf("response test (%v): got %v want %v. \nBody: %v\n", v.testName,
 				status, v.expectedResponseStatus, rr.Body.String())
 		}
 
 		// Init body for response extraction
-		var body db.Transaction
-		var foundTransaction db.Transaction
+		var body db.MaintenanceRequest
+		var foundRequest db.MaintenanceRequest
 		// Grab ID from response body
 		json.Unmarshal(rr.Body.Bytes(), &body)
 
 		// Find the created transaction (to obtain full data with ID)
-		testConnection.dbClient.Find(foundTransaction, uint(body.ID))
+		testConnection.dbClient.Find(foundRequest, uint(body.ID))
 
 		// Compare found details with those found in returned body
-		checkTransactionDetails(&body, &foundTransaction, t, true)
+		checkMaintenanceRequestDetails(&body, &foundRequest, t, true)
 
 		// If the task log was created successfully, check that it's deleted after test
 		if v.expectedResponseStatus == http.StatusCreated {
 			// Cleanup
 			//
 			// Delete the created task logs
-			deleteResult := testConnection.dbClient.Delete(&db.TaskLog{}, uint(body.ID))
-			if deleteResult.Error != nil {
-				t.Fatalf("Couldn't clean up created transactions: %v", deleteResult.Error)
+			deleteMainResult := testConnection.dbClient.Delete(&db.MaintenanceRequest{}, uint(body.ID))
+			if deleteMainResult.Error != nil {
+				t.Fatalf("Couldn't clean up created maintenance requests: %v", deleteMainResult.Error)
 			}
-			// Delete the created fixtures
-			deleteResult = testConnection.dbClient.Delete(createdTasks)
-			if deleteResult.Error != nil {
-				t.Fatalf("Couldn't clean up seeded tasks: %v", deleteResult.Error)
-			}
+		}
+		// Delete the created task regardless of response result
+		deleteTaskResult := testConnection.dbClient.Delete(createdTasks)
+		if deleteTaskResult.Error != nil {
+			t.Fatalf("Couldn't clean up seeded tasks: %v", deleteTaskResult.Error)
 		}
 	}
 
@@ -700,7 +670,7 @@ func TestTransactionController_Create(t *testing.T) {
 }
 
 // Check the transaction details
-func checkTransactionDetails(actual *db.Transaction, expected *db.Transaction, t *testing.T, checkId bool) {
+func checkMaintenanceRequestDetails(actual *db.MaintenanceRequest, expected *db.MaintenanceRequest, t *testing.T, checkId bool) {
 
 	// Only check ID if parameter checkId is true
 	if checkId == true {
@@ -711,54 +681,31 @@ func checkTransactionDetails(actual *db.Transaction, expected *db.Transaction, t
 	}
 
 	// Verify that the actual details matches the expected details
+	if actual.WorkDefinition != expected.WorkDefinition {
+		t.Errorf("found maintenance request has incorrect work definition: expected %s, got %s", expected.WorkDefinition, actual.WorkDefinition)
+	}
+	if actual.Notes != expected.Notes {
+		t.Errorf("found maintenance request has incorrect notes: expected %s, got %s", expected.Notes, actual.Notes)
+	}
+	if actual.Scale != expected.Scale {
+		t.Errorf("found maintenance request has incorrect scale: expected %s, got %s", expected.Scale, actual.Scale)
+	}
+	if actual.Tax != expected.Tax {
+		t.Errorf("found maintenance request has incorrect tax: expected %v, got %v", expected.Tax, actual.Tax)
+	}
+	if actual.TotalCost != expected.TotalCost {
+		t.Errorf("found maintenance request has incorrect total cost: expected %v, got %v", expected.TotalCost, actual.TotalCost)
+	}
 	if actual.Type != expected.Type {
-		t.Errorf("found transaction has incorrect type: expected %s, got %s", expected.Type, actual.Type)
+		t.Errorf("found maintenance request has incorrect type: expected %s, got %s", expected.Type, actual.Type)
 	}
-	if actual.IsLease != expected.IsLease {
-		t.Errorf("found transaction has incorrect is lease: expected %t, got %t", expected.IsLease, actual.IsLease)
+
+	// Relationships
+	if actual.PropertyID != expected.PropertyID {
+		t.Errorf("found maintenance request has incorrect property ID: expected %d, got %d", expected.Property.ID, actual.Property.ID)
 	}
-	if actual.TenancyType != expected.TenancyType {
-		t.Errorf("found transaction has incorrect tenancy type: expected %s, got %s", expected.TenancyType, actual.TenancyType)
+	if actual.TaskID != expected.TaskID {
+		t.Errorf("found maintenance request has incorrect task ID: expected %d, got %d", expected.TaskID, actual.TaskID)
 	}
-	if actual.Fee != expected.Fee {
-		t.Errorf("found transaction has incorrect fee: expected %f, got %f", expected.Fee, actual.Fee)
-	}
-	if actual.TransactionNotes != expected.TransactionNotes {
-		t.Errorf("found transaction has incorrect transaction notes: expected %s, got %s", expected.TransactionNotes, actual.TransactionNotes)
-	}
-	// Agency
-	if actual.Agency != expected.Agency {
-		t.Errorf("found transaction has incorrect agency: expected %s, got %s", expected.Agency, actual.Agency)
-	}
-	if actual.AgencyName != expected.AgencyName {
-		t.Errorf("found transaction has incorrect agency name: expected %s, got %s", expected.AgencyName, actual.AgencyName)
-	}
-	// Transaction completion
-	if actual.TransactionCompletion != expected.TransactionCompletion {
-		t.Errorf("found transaction has incorrect transaction completion: expected %s, got %s", expected.TransactionCompletion, actual.TransactionCompletion)
-	}
-	if actual.TransactionValue != expected.TransactionValue {
-		t.Errorf("found transaction has incorrect transaction value: expected %f, got %f", expected.TransactionValue, actual.TransactionValue)
-	}
+
 }
-
-// func buildTransactionFixtures(propertiesToCreate []db.Property, tasksToCreate []db.Task, transactionsToCreate []db.Transaction, t *testing.T) ([]db.Property, []db.Task, []db.Transaction) {
-
-// 	createResult := testConnection.dbClient.Create(propertiesToCreate)
-// 	if createResult.Error != nil {
-// 		t.Fatal("Failed to create properties for transaction find all test: ", createResult.Error)
-// 	}
-// 	// Create tasks
-// 	createResult = testConnection.dbClient.Create(tasksToCreate)
-// 	if createResult.Error != nil {
-// 		t.Fatal("Failed to create tasks for transaction find all test: ", createResult.Error)
-// 	}
-
-// 	// Create transactions
-// 	createResult = testConnection.dbClient.Create(transactionsToCreate)
-// 	if createResult.Error != nil {
-// 		t.Fatal("Failed to create transactions for transactions find all test: ", createResult.Error)
-// 	}
-
-// 	return transactionsToCreate
-// }

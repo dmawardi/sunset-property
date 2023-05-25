@@ -89,19 +89,13 @@ func (r *maintenanceRequestRepository) Update(id int, request *db.MaintenanceReq
 	}
 
 	// Update found maint. request with incoming details
+	// Association auto applied to nature of m2o relationship
 	updateResult := r.DB.Model(&foundRequest).Updates(request)
 	if updateResult.Error != nil {
 		fmt.Println("Maintenance request update failed: ", updateResult.Error)
 		return nil, updateResult.Error
 	}
-
-	// Build associations
-	assResult := r.DB.Model(&foundRequest).Association("Property").Append(request.Property)
-	// Check if association update failed
-	if assResult != nil {
-		fmt.Println("Property association update failed: ", assResult)
-		return nil, assResult
-	}
+	fmt.Println("Found maintenance request: ", foundRequest)
 
 	// Retrieve updated maintenance request by id
 	updatedRequest, err := r.FindById(id)

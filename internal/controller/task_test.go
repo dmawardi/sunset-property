@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/dmawardi/Go-Template/internal/db"
+	"github.com/dmawardi/Go-Template/internal/models"
 )
 
 func TestTaskController_FindAll(t *testing.T) {
@@ -235,43 +236,43 @@ func TestTaskController_Update(t *testing.T) {
 
 	// Build test array
 	var updateTests = []struct {
-		data                   db.Task
+		data                   models.CreateTask
 		tokenToUse             string
 		expectedResponseStatus int
 		checkDetails           bool
 		testName               string
 	}{
-		{db.Task{
+		{models.CreateTask{
 			TaskName: "Broken light switches",
 			Type:     "Maintenance",
 			Notes:    "This is a note",
 			Status:   "Pending",
-		}, testConnection.accounts.user.token, http.StatusForbidden, false, "Contacts basic user update test"},
-		{db.Task{
+		}, testConnection.accounts.user.token, http.StatusForbidden, false, "basic user update test"},
+		{models.CreateTask{
 			TaskName: "Broken light switches",
 			Type:     "Maintenance",
 			Notes:    "This is a note",
 			Status:   "Pending",
-		}, testConnection.accounts.admin.token, http.StatusOK, true, "Contacts admin update test"},
+		}, testConnection.accounts.admin.token, http.StatusOK, true, "admin update test"},
 		// Update should be disallowed due to being too short
-		{db.Task{
+		{models.CreateTask{
 			TaskName: "Br",
 			Type:     "Maintenance",
 			Notes:    "This",
-		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Contacts admin too short fail test"},
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "admin too short fail test"},
 		// Update should be disallowed due to not being proper Type value
-		{db.Task{
+		{models.CreateTask{
 			TaskName: "Broken light switches",
 			Type:     "eggos",
-		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Contacts admin bad email fail test"},
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "admin bad email fail test"},
 		// Update should be disallowed due to not being proper Status value
-		{db.Task{
+		{models.CreateTask{
 			TaskName: "Broken light switches",
 			Type:     "Maintenance",
 			Status:   "Been there",
-		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "Contacts admin bad phone fail test"},
+		}, testConnection.accounts.admin.token, http.StatusBadRequest, false, "admin bad phone fail test"},
 		// User should be forbidden before validating rather than Bad Request
-		{db.Task{
+		{models.CreateTask{
 			TaskName: "Br",
 			Type:     "Inspection",
 			Notes:    "This is a note",
@@ -301,8 +302,8 @@ func TestTaskController_Update(t *testing.T) {
 		json.Unmarshal(rr.Body.Bytes(), &body)
 		// Check response expected vs received
 		if status := rr.Code; status != v.expectedResponseStatus {
-			t.Errorf("Task update (%v): got %v want %v.", v.testName,
-				status, v.expectedResponseStatus)
+			t.Errorf("Task update (%v): got %v want %v. \nRecv Body: %v\n", v.testName,
+				status, v.expectedResponseStatus, rr.Body.String())
 		}
 
 		// If need to check details

@@ -84,18 +84,18 @@ func (s *maintenanceRequestService) Delete(id int) error {
 // Updates maintenance request in database
 func (s *maintenanceRequestService) Update(id int, request *models.UpdateMaintenanceRequest) (*db.MaintenanceRequest, error) {
 	// Create a new maintenance request from DTO
-	requestToUpdate := db.MaintenanceRequest{
+	requestToUpdate := &db.MaintenanceRequest{
 		WorkDefinition: request.WorkDefinition,
 		Type:           request.Type,
 		Notes:          request.Notes,
 		Scale:          request.Scale,
 		Tax:            request.Tax,
 		TotalCost:      request.TotalCost,
-		Property:       request.Property,
+		PropertyID:     request.Property.ID,
 	}
 
 	// Update using repo
-	updatedRequest, err := s.repo.Update(id, &requestToUpdate)
+	updatedRequest, err := s.repo.Update(id, requestToUpdate)
 	if err != nil {
 		return nil, err
 	}

@@ -281,7 +281,6 @@ func buildPropLogUpdate(updateStruct interface{}) string {
 		if valueType.String() == "string" {
 			// and not empty
 			if value != "" {
-				fmt.Printf("\nString value found in Field name: %v", field.Name)
 				updateString += fmt.Sprintf("%s (%v), ", field.Name, value.(string)[0:5]+"...")
 			}
 			// else if value type is numeric

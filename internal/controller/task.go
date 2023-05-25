@@ -101,12 +101,12 @@ func (c taskController) Find(w http.ResponseWriter, r *http.Request) {
 
 	foundTask, err := c.service.FindById(idParameter)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Can't find task with ID: %v", idParameter), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Can't find task with ID: %v.\n %v", idParameter, err), http.StatusBadRequest)
 		return
 	}
 	err = helpers.WriteAsJSON(w, foundTask)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Can't find task with ID: %v\n", idParameter), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Can't find task with ID: %v.\n %v", idParameter, err), http.StatusBadRequest)
 		return
 	}
 }
@@ -145,7 +145,7 @@ func (c taskController) Create(w http.ResponseWriter, r *http.Request) {
 	// Create property in db
 	_, createErr := c.service.Create(&task)
 	if createErr != nil {
-		http.Error(w, "Task creation failed.", http.StatusBadRequest)
+		http.Error(w, "Task creation failed:."+createErr.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -279,7 +279,6 @@ func buildTaskLogUpdate(updateStruct interface{}) string {
 		if valueType.String() == "string" {
 			// and not empty
 			if value != "" {
-				fmt.Printf("\nString value found in Field name: %v", field.Name)
 				// Convert value to string
 				valueString := value.(string)
 				if len(valueString) > 10 {

@@ -143,7 +143,7 @@ func (c maintenanceRequestController) Create(w http.ResponseWriter, r *http.Requ
 	// Create maintenance request in db
 	_, createErr := c.service.Create(&request)
 	if createErr != nil {
-		http.Error(w, "Maintenance request creation failed.", http.StatusBadRequest)
+		http.Error(w, "Maintenance request creation failed:."+createErr.Error(), http.StatusBadRequest)
 		return
 	}
 

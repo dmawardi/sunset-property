@@ -119,8 +119,10 @@ type Task struct {
 	Log []TaskLog `json:"log,omitempty" gorm:"foreignKey:TaskID"`
 	// One to one
 	// Note: Relationship between tasks and properties are handled within transactions
-	Transaction        Transaction        `json:"transaction,omitempty" gorm:"foreignKey:TaskID"`
-	MaintenanceRequest MaintenanceRequest `json:"maintenance_request,omitempty" gorm:"foreignKey:TaskID"`
+	// TransactionID uint `json:"transaction_id,omitempty" gorm:"unique;default:null"`
+	Transaction Transaction `json:"transaction,omitempty" gorm:"unique;foreignKey:TaskID"`
+	// MaintenanceRequestID uint               `json:"maintenance_request_id,omitempty" gorm:"unique;default:null"`
+	MaintenanceRequest MaintenanceRequest `json:"maintenance_request,omitempty" gorm:"unique;foreignKey:TaskID"`
 }
 
 type TaskLog struct {
@@ -163,7 +165,8 @@ type Transaction struct {
 	// Many to many
 	Contacts []Contact `json:"contacts,omitempty" gorm:"many2many:contact_transactions"`
 	// One to one
-	TaskID uint `json:"task_id,omitempty" gorm:"unique;not null"`
+	TaskID uint `json:"task_id,omitempty" gorm:"unique"`
+	// Task   Task `json:"task,omitempty" gorm:"foreignKey:TaskID"`
 }
 
 type MaintenanceRequest struct {
@@ -184,7 +187,7 @@ type MaintenanceRequest struct {
 	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
 	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
 	// One to one
-	TaskID uint `json:"task_id,omitempty" gorm:"not null"`
+	TaskID uint `json:"task,omitempty" gorm:"unique"`
 	// One to many
 	// VendorID uint `json:"vendor_id,omitempty" gorm:""`
 	// Vendor Vendor `json:"vendor_id,omitempty" gorm:""`

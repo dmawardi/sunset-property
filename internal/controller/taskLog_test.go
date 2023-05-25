@@ -220,7 +220,7 @@ func TestTaskLogController_Delete(t *testing.T) {
 	}
 
 	// Create a request with an "id" URL parameter
-	requestUrl := fmt.Sprintf("/api/task-logs/%v", testConnection.propertyLogs.created[0].ID)
+	requestUrl := fmt.Sprintf("/api/task-logs/%v", createdTaskLogs[0].ID)
 	req, err := http.NewRequest("DELETE", requestUrl, nil)
 	if err != nil {
 		t.Fatal(err)

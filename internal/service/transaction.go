@@ -37,7 +37,7 @@ func (s *transactionService) Create(transaction *models.CreateTransaction) (*db.
 		TransactionValue: transaction.TransactionValue,
 		Fee:              transaction.Fee,
 		Property:         transaction.Property,
-		TaskID:           transaction.Task.ID,
+		TaskID:             transaction.Task.ID,
 	}
 
 	// Create transaction in database
