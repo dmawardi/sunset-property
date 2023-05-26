@@ -140,7 +140,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	maintenanceService := service.NewMaintenanceRequestService(maintenanceRepo)
 	maintenanceController := controller.NewMaintenanceRequestController(maintenanceService)
 
+	// Work types
+	workTypeRepo := repository.NewWorkTypeRepository(client)
+	workTypeService := service.NewWorkTypeService(workTypeRepo)
+	workTypeController := controller.NewWorkTypeController(workTypeService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController, maintenanceController)
+	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController, maintenanceController, workTypeController)
 	return api
 }

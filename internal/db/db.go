@@ -32,7 +32,31 @@ func DbConnect() *gorm.DB {
 	db.AutoMigrate(&Task{})
 	db.AutoMigrate(&TaskLog{})
 	db.AutoMigrate(&Transaction{})
+	db.AutoMigrate(&WorkType{})
 	db.AutoMigrate(&MaintenanceRequest{})
 
+	// Build basic work types
+	buildBasicWorkTypes(db)
+
 	return db
+}
+
+func buildBasicWorkTypes(db *gorm.DB) {
+	// Build basic work types
+	workTypes := []WorkType{
+		{Name: "Lighting"},
+		{Name: "Plumbing"},
+		{Name: "Electrical"},
+		{Name: "Painting"},
+		{Name: "Cleaning"},
+		{Name: "Gardening"},
+		{Name: "HVAC"},
+		{Name: "Security"},
+		{Name: "Fire safety"},
+		{Name: "Energy management"},
+		{Name: "Escalators/lifts"},
+		{Name: "Facade"},
+		{Name: "Other"},
+	}
+	createWorkOrderIfNotExist(workTypes, db)
 }

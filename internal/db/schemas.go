@@ -187,8 +187,22 @@ type MaintenanceRequest struct {
 	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
 	Property   Property `json:"property,omitempty" gorm:"foreignKey:PropertyID"`
 	// One to one
-	TaskID uint `json:"task,omitempty" gorm:"unique"`
+	WorkTypeID uint     `json:"work_type_id,omitempty" gorm:""`
+	WorkType   WorkType `json:"work_type,omitempty" gorm:"foreignKey:WorkTypeID"`
+	TaskID     uint     `json:"task,omitempty" gorm:"unique"`
 	// One to many
 	// VendorID uint `json:"vendor_id,omitempty" gorm:""`
 	// Vendor Vendor `json:"vendor_id,omitempty" gorm:""`
+}
+
+type WorkType struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	// Required fields
+	Name string `json:"name,omitempty" gorm:"unique,not null"`
+	// Relationships
+	// One to many
+	MaintenanceRequests []MaintenanceRequest `json:"maintenance_requests,omitempty" gorm:"foreignKey:WorkTypeID"`
 }

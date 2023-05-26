@@ -37,6 +37,7 @@ type TestDbRepo struct {
 	taskLogs           taskLogDB
 	transactions       transactionDB
 	maintenanceRequest maintenanceRequestDB
+	workTypes          workTypeDB
 	router             http.Handler
 	// For authentication mocking
 	accounts userAccounts
@@ -87,16 +88,24 @@ type taskLogDB struct {
 }
 
 // Types of tasks
+// Transactions
 type transactionDB struct {
 	repo repository.TransactionRepository
 	serv service.TransactionService
 	cont controller.TransactionController
 }
 
+// Work Orders
 type maintenanceRequestDB struct {
 	repo repository.MaintenanceRequestRepository
 	serv service.MaintenanceRequestService
 	cont controller.MaintenanceRequestController
+}
+
+type workTypeDB struct {
+	repo repository.WorkTypeRepository
+	serv service.WorkTypeService
+	cont controller.WorkTypeController
 }
 
 // Account structures
@@ -148,6 +157,7 @@ func (t TestDbRepo) buildAPI() http.Handler {
 		t.taskLogs.cont,
 		t.transactions.cont,
 		t.maintenanceRequest.cont,
+		t.workTypes.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -220,6 +230,11 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.maintenanceRequest.serv = service.NewMaintenanceRequestService(t.maintenanceRequest.repo)
 	t.maintenanceRequest.cont = controller.NewMaintenanceRequestController(t.maintenanceRequest.serv)
 
+	// Work Types
+	t.workTypes.repo = repository.NewWorkTypeRepository(t.dbClient)
+	t.workTypes.serv = service.NewWorkTypeService(t.workTypes.repo)
+	t.workTypes.cont = controller.NewWorkTypeController(t.workTypes.serv)
+
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)
 }
@@ -233,7 +248,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}, db.WorkType{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 

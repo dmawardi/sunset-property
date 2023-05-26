@@ -25,6 +25,7 @@ type api struct {
 	taskLog            controller.TaskLogController
 	transaction        controller.TransactionController
 	maintenanceRequest controller.MaintenanceRequestController
+	workType           controller.WorkTypeController
 }
 
 func NewApi(user controller.UserController,
@@ -35,8 +36,9 @@ func NewApi(user controller.UserController,
 	task controller.TaskController,
 	taskLog controller.TaskLogController,
 	trans controller.TransactionController,
-	maintenance controller.MaintenanceRequestController) Api {
-	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance}
+	maintenance controller.MaintenanceRequestController,
+	workType controller.WorkTypeController) Api {
+	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance, workType}
 }
 
 func (a api) Routes() http.Handler {
@@ -130,6 +132,12 @@ func (a api) Routes() http.Handler {
 			mux.Put("/api/maintenance/{id}", a.maintenanceRequest.Update)
 			mux.Delete("/api/maintenance/{id}", a.maintenanceRequest.Delete)
 
+			// Work types
+			mux.Post("/api/work-types", a.workType.Create)
+			mux.Get("/api/work-types", a.workType.FindAll)
+			mux.Get("/api/work-types/{id}", a.workType.Find)
+			mux.Put("/api/work-types/{id}", a.workType.Update)
+			mux.Delete("/api/work-types/{id}", a.workType.Delete)
 		})
 
 	})

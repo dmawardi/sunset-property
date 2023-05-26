@@ -61,13 +61,14 @@ Follow these steps to add a feature to the API. This template uses the clean arc
 
 1. Build schema and auto migrate in ./internal/db using ORM instructions below.
 2. Build repository in ./internal/repository which is the interaction between the DB and the application. This should use a struct with receiver functions.
-3. Build service in ./internal/service that uses the repository and applies business logic.
-4. Build the controller (handler) in ./internal/controller that accepts the request, performs data validation, then sends to the service to interact with database.
-5. Add validation to handler using govalidator. This is done by adding `valid:""` key-value pairs to struct DTO definitions (/internal/models) that are being passed into the ValidateStruct function (used in controllers).
-6. Add the new controller to the API struct in the ./internal/routes/routes.go file. This allows it to be used within the Routes function in the same file. Build routes to use the handlers that have been created in step 4 using the api struct.
-7. Update the ApiSetup function in the ./cmd/main.go file to build the new repository, service, and controller.
-8. Add the route to the RBAC authorization policy file (./internal/auth/defaultPolicy.go)
-9. (Testing) For e2e testing, you will need to update the controllers_test.go file in ./internal/controller. Updates are required in the buildAPI, setupDatabase & setupDBAuthAppModels functions
+3. Build incoming DTO models for Create and Update JSON requests in ./internal/models
+4. Build service in ./internal/service that uses the repository and applies business logic.
+5. Build the controller (handler) in ./internal/controller that accepts the request, performs data validation, then sends to the service to interact with database.
+6. Add validation to handler using govalidator. This is done by adding `valid:""` key-value pairs to struct DTO definitions (/internal/models) that are being passed into the ValidateStruct function (used in controllers).
+7. Add the new controller to the API struct in the ./internal/routes/routes.go file. This allows it to be used within the Routes function in the same file. Build routes to use the handlers that have been created in step 4 using the api struct.
+8. Update the ApiSetup function in the ./cmd/main.go file to build the new repository, service, and controller.
+9. Add the route to the RBAC authorization policy file (./internal/auth/defaultPolicy.go)
+10. (Testing) For e2e testing, you will need to update the controllers_test.go file in ./internal/controller. Updates are required in the buildAPI, setupDatabase & setupDBAuthAppModels functions
 
 ---
 
