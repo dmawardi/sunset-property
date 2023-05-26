@@ -154,6 +154,21 @@ var DefaultPolicyList = []policySet{
 		subject: "admin", object: "/api/transactions", action: "delete",
 	},
 
+	// api/maintenance
+	// admin
+	{
+		subject: "admin", object: "/api/maintenance", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/maintenance", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/maintenance", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/maintenance", action: "delete",
+	},
+
 	// api/work-types
 	// admin
 	{
