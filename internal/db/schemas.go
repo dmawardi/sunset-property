@@ -205,4 +205,31 @@ type WorkType struct {
 	// Relationships
 	// One to many
 	MaintenanceRequests []MaintenanceRequest `json:"maintenance_requests,omitempty" gorm:"foreignKey:WorkTypeID"`
+	// Many to many
+	Vendors []Vendor `json:"vendors,omitempty" gorm:"many2many:vendor_work_types"`
+}
+
+type Vendor struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `gorm:"index,omitempty"`
+	// Required fields
+	CompanyName string `json:"company_name,omitempty" gorm:"unique,not null"`
+	NPWP        string `json:"npwp,omitempty" gorm:"not null"`
+	NIB         string `json:"nib,omitempty" gorm:""`
+	Email       string `json:"email,omitempty" gorm:""`
+	Phone       string `json:"phone,omitempty" gorm:""`
+	// Address fields
+	Street_Address_1 string `json:"street_address_1,omitempty" gorm:""`
+	Street_Address_2 string `json:"street_address_2,omitempty" gorm:""`
+	City             string `json:"city,omitempty" gorm:""`
+	Province         string `json:"province,omitempty" gorm:"not null,default:Bali,enum:Aceh,Bali,Banten,Bengkulu,Central Java,Central Kalimantan,Central Sulawesi,East Java,East Kalimantan,East Nusa Tenggara,Gorontalo,Jakarta Special Capital Region,Jambi,Lampung,Maluku,North Kalimantan,North Maluku,North Sulawesi,North Sumatra,Papua,Riau,Riau Islands,South Kalimantan,South Sulawesi,South Sumatra,Southeast Sulawesi,West Java,West Kalimantan,West Nusa Tenggara,West Papua,West Sulawesi,West Sumatra,Yogyakarta Special Region"`
+	Postal_Code      string `json:"postal_code,omitempty" gorm:""`
+	Suburb           string `json:"suburb,omitempty" gorm:"not null,default:Badung"`
+	// Relationships
+	// One to many
+	// MaintenanceRequests []MaintenanceRequest `json:"maintenance_requests,omitempty" gorm:"foreignKey:VendorID"`
+	// Many to many
+	WorkTypes []WorkType `json:"work_types,omitempty" gorm:"many2many:vendor_work_types"`
 }

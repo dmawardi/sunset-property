@@ -183,4 +183,19 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/work-types", action: "delete",
 	},
+
+	// api/vendors
+	// admin
+	{
+		subject: "admin", object: "/api/vendors", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/vendors", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/vendors", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/vendors", action: "delete",
+	},
 }

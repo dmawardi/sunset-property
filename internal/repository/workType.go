@@ -64,13 +64,13 @@ func (r *workTypeRepository) FindById(id int) (*db.WorkType, error) {
 // Delete work type in database
 func (r *workTypeRepository) Delete(id int) error {
 	// Create an empty ref object of type work type
-	request := db.WorkType{}
+	workType := db.WorkType{}
 	// Delete work type from db if exists
-	result := r.DB.Delete(&request, id)
+	result := r.DB.Delete(&workType, id)
 
 	// If error detected
 	if result.Error != nil {
-		fmt.Println("error in deleting maintenance request: ", result.Error)
+		fmt.Println("error in deleting work type: ", result.Error)
 		return result.Error
 	}
 	// else

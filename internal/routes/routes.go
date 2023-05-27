@@ -26,6 +26,7 @@ type api struct {
 	transaction        controller.TransactionController
 	maintenanceRequest controller.MaintenanceRequestController
 	workType           controller.WorkTypeController
+	vendor             controller.VendorController
 }
 
 func NewApi(user controller.UserController,
@@ -37,8 +38,9 @@ func NewApi(user controller.UserController,
 	taskLog controller.TaskLogController,
 	trans controller.TransactionController,
 	maintenance controller.MaintenanceRequestController,
-	workType controller.WorkTypeController) Api {
-	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance, workType}
+	workType controller.WorkTypeController,
+	vendor controller.VendorController) Api {
+	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance, workType, vendor}
 }
 
 func (a api) Routes() http.Handler {
@@ -138,6 +140,13 @@ func (a api) Routes() http.Handler {
 			mux.Get("/api/work-types/{id}", a.workType.Find)
 			mux.Put("/api/work-types/{id}", a.workType.Update)
 			mux.Delete("/api/work-types/{id}", a.workType.Delete)
+
+			// Vendors
+			mux.Post("/api/vendors", a.vendor.Create)
+			mux.Get("/api/vendors", a.vendor.FindAll)
+			mux.Get("/api/vendors/{id}", a.vendor.Find)
+			mux.Put("/api/vendors/{id}", a.vendor.Update)
+			mux.Delete("/api/vendors/{id}", a.vendor.Delete)
 		})
 
 	})

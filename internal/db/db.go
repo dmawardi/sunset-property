@@ -34,6 +34,7 @@ func DbConnect() *gorm.DB {
 	db.AutoMigrate(&Transaction{})
 	db.AutoMigrate(&WorkType{})
 	db.AutoMigrate(&MaintenanceRequest{})
+	db.AutoMigrate(&Vendor{})
 
 	// Build basic work types
 	buildBasicWorkTypes(db)

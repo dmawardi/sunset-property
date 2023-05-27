@@ -27,18 +27,19 @@ var testConnection TestDbRepo
 var app config.AppConfig
 
 type TestDbRepo struct {
-	dbClient           *gorm.DB
-	users              userDB
-	properties         propertyDB
-	features           featureDB
-	propertyLogs       propertyLogDB
-	contacts           contactDB
-	tasks              taskDB
-	taskLogs           taskLogDB
-	transactions       transactionDB
-	maintenanceRequest maintenanceRequestDB
-	workTypes          workTypeDB
-	router             http.Handler
+	dbClient            *gorm.DB
+	users               userDB
+	properties          propertyDB
+	features            featureDB
+	propertyLogs        propertyLogDB
+	contacts            contactDB
+	tasks               taskDB
+	taskLogs            taskLogDB
+	transactions        transactionDB
+	maintenanceRequests maintenanceRequestDB
+	workTypes           workTypeDB
+	vendors             vendorDB
+	router              http.Handler
 	// For authentication mocking
 	accounts userAccounts
 }
@@ -102,6 +103,12 @@ type maintenanceRequestDB struct {
 	cont controller.MaintenanceRequestController
 }
 
+type vendorDB struct {
+	repo repository.VendorRepository
+	serv service.VendorService
+	cont controller.VendorController
+}
+
 type workTypeDB struct {
 	repo repository.WorkTypeRepository
 	serv service.WorkTypeService
@@ -156,8 +163,9 @@ func (t TestDbRepo) buildAPI() http.Handler {
 		t.tasks.cont,
 		t.taskLogs.cont,
 		t.transactions.cont,
-		t.maintenanceRequest.cont,
+		t.maintenanceRequests.cont,
 		t.workTypes.cont,
+		t.vendors.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -226,14 +234,19 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.transactions.cont = controller.NewTransactionController(t.transactions.serv)
 
 	// Maintenance Requests
-	t.maintenanceRequest.repo = repository.NewMaintenanceRequestRepository(t.dbClient)
-	t.maintenanceRequest.serv = service.NewMaintenanceRequestService(t.maintenanceRequest.repo)
-	t.maintenanceRequest.cont = controller.NewMaintenanceRequestController(t.maintenanceRequest.serv)
+	t.maintenanceRequests.repo = repository.NewMaintenanceRequestRepository(t.dbClient)
+	t.maintenanceRequests.serv = service.NewMaintenanceRequestService(t.maintenanceRequests.repo)
+	t.maintenanceRequests.cont = controller.NewMaintenanceRequestController(t.maintenanceRequests.serv)
 
 	// Work Types
 	t.workTypes.repo = repository.NewWorkTypeRepository(t.dbClient)
 	t.workTypes.serv = service.NewWorkTypeService(t.workTypes.repo)
 	t.workTypes.cont = controller.NewWorkTypeController(t.workTypes.serv)
+
+	// Vendors
+	t.vendors.repo = repository.NewVendorRepository(t.dbClient)
+	t.vendors.serv = service.NewVendorService(t.vendors.repo)
+	t.vendors.cont = controller.NewVendorController(t.vendors.serv)
 
 	// Setup the enforcer for usage as middleware
 	setupTestEnforcer(t.dbClient)
@@ -248,7 +261,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}, db.WorkType{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}, db.WorkType{}, db.Vendor{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 

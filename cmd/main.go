@@ -145,7 +145,12 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	workTypeService := service.NewWorkTypeService(workTypeRepo)
 	workTypeController := controller.NewWorkTypeController(workTypeService)
 
+	// Vendors
+	vendorRepo := repository.NewVendorRepository(client)
+	vendorService := service.NewVendorService(vendorRepo)
+	vendorController := controller.NewVendorController(vendorService)
+
 	// Build API using controllers
-	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController, maintenanceController, workTypeController)
+	api := routes.NewApi(userController, propController, featController, propLogController, contactController, taskController, taskLogController, transactionController, maintenanceController, workTypeController, vendorController)
 	return api
 }
