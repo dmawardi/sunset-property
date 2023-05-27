@@ -31,6 +31,13 @@ func (r *vendorRepository) Create(vendor *db.Vendor) (*db.Vendor, error) {
 		return nil, fmt.Errorf("failed to create vendor: %w", result.Error)
 	}
 
+	assResult := r.DB.Model(&vendor).Association("WorkTypes").Replace(vendor.WorkTypes)
+	// Check if association update failed
+	if assResult != nil {
+		fmt.Println("Work type update failed: ", assResult)
+		return nil, assResult
+	}
+
 	return vendor, nil
 }
 
@@ -51,7 +58,7 @@ func (r *vendorRepository) FindById(id int) (*db.Vendor, error) {
 	// Create an empty ref object of type vendor
 	vendor := db.Vendor{}
 	// Grab vendor from db if exists
-	result := r.DB.First(&vendor, id)
+	result := r.DB.Preload("WorkTypes").First(&vendor, id)
 
 	// If error detected
 	if result.Error != nil {
@@ -93,6 +100,13 @@ func (r *vendorRepository) Update(id int, vendor *db.Vendor) (*db.Vendor, error)
 	if updateResult.Error != nil {
 		fmt.Println("Vendor update failed: ", updateResult.Error)
 		return nil, updateResult.Error
+	}
+
+	assResult := r.DB.Model(&foundVendor).Association("WorkTypes").Replace(vendor.WorkTypes)
+	// Check if association update failed
+	if assResult != nil {
+		fmt.Println("Property association update failed: ", assResult)
+		return nil, assResult
 	}
 
 	// Retrieve updated vendor by id
