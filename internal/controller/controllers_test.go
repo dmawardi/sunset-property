@@ -149,7 +149,6 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 	// exit with the same exit code as the tests
 	os.Exit(exitCode)
-
 }
 
 // Builds new API using routes packages

@@ -220,11 +220,12 @@ type Vendor struct {
 	NIB         string `json:"nib,omitempty" gorm:""`
 	Email       string `json:"email,omitempty" gorm:""`
 	Phone       string `json:"phone,omitempty" gorm:""`
+	Notes       string `json:"notes,omitempty" gorm:"default:null"`
 	// Address fields
 	Street_Address_1 string `json:"street_address_1,omitempty" gorm:""`
 	Street_Address_2 string `json:"street_address_2,omitempty" gorm:""`
 	City             string `json:"city,omitempty" gorm:""`
-	Province         string `json:"province,omitempty" gorm:"not null;default:Bali;enum:Aceh,Bali,Banten,Bengkulu,Central Java,Central Kalimantan,Central Sulawesi,East Java,East Kalimantan,East Nusa Tenggara,Gorontalo,Jakarta Special Capital Region,Jambi,Lampung,Maluku,North Kalimantan,North Maluku,North Sulawesi,North Sumatra,Papua,Riau,Riau Islands,South Kalimantan,South Sulawesi,South Sumatra,Southeast Sulawesi,West Java,West Kalimantan,West Nusa Tenggara,West Papua,West Sulawesi,West Sumatra,Yogyakarta Special Region"`
+	Province         string `json:"province,omitempty" gorm:"not null;default:Bali;enum:Aceh,Bali,Banten,Bengkulu,Central Java,Central Kalimantan,Central Sulawesi,East Java,East Kalimantan,East Nusa Tenggara,Gorontalo,DKI Jakarta,Jambi,Lampung,Maluku,North Kalimantan,North Maluku,North Sulawesi,North Sumatra,Papua,Riau,Riau Islands,South Kalimantan,South Sulawesi,South Sumatra,Southeast Sulawesi,West Java,West Kalimantan,West Nusa Tenggara,West Papua,West Sulawesi,West Sumatra,Yogyakarta Special Region"`
 	Postal_Code      string `json:"postal_code,omitempty" gorm:""`
 	Suburb           string `json:"suburb,omitempty" gorm:"not null;default:Badung"`
 	// Relationships

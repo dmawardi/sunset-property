@@ -113,7 +113,7 @@ func TestWorkTypeController_FindAll(t *testing.T) {
 func TestWorkTypeController_Find(t *testing.T) {
 	// Test setup
 	typeToCreate1 := &db.WorkType{
-		Name: "Test Type 1",
+		Name: "Test Type 3",
 	}
 	createdWorkTypes := []db.WorkType{*typeToCreate1}
 	createResult := testConnection.dbClient.Create(createdWorkTypes)
@@ -158,7 +158,7 @@ func TestWorkTypeController_Find(t *testing.T) {
 func TestWorkTypeController_Delete(t *testing.T) {
 	// Test setup
 	typeToCreate1 := &db.WorkType{
-		Name: "Test Type 1",
+		Name: "Test Type 4",
 	}
 	createdWorkTypes := []db.WorkType{*typeToCreate1}
 	createResult := testConnection.dbClient.Create(createdWorkTypes)
@@ -211,7 +211,7 @@ func TestWorkTypeController_Delete(t *testing.T) {
 func TestWorkTypeController_Update(t *testing.T) {
 	// Test setup
 	typeToCreate1 := &db.WorkType{
-		Name: "Test Type 1",
+		Name: "Test Type 5",
 	}
 	createdWorkTypes := []db.WorkType{*typeToCreate1}
 	createResult := testConnection.dbClient.Create(createdWorkTypes)
