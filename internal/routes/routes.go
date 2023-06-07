@@ -27,6 +27,7 @@ type api struct {
 	maintenanceRequest controller.MaintenanceRequestController
 	workType           controller.WorkTypeController
 	vendor             controller.VendorController
+	propertyAttach     controller.PropertyAttachmentController
 }
 
 func NewApi(user controller.UserController,
@@ -39,8 +40,10 @@ func NewApi(user controller.UserController,
 	trans controller.TransactionController,
 	maintenance controller.MaintenanceRequestController,
 	workType controller.WorkTypeController,
-	vendor controller.VendorController) Api {
-	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance, workType, vendor}
+	vendor controller.VendorController,
+	propAttach controller.PropertyAttachmentController,
+) Api {
+	return &api{user, property, feature, propertyLog, contact, task, taskLog, trans, maintenance, workType, vendor, propAttach}
 }
 
 func (a api) Routes() http.Handler {
@@ -84,6 +87,15 @@ func (a api) Routes() http.Handler {
 			mux.Get("/api/properties/{id}", a.property.Find)
 			mux.Put("/api/properties/{id}", a.property.Update)
 			mux.Delete("/api/properties/{id}", a.property.Delete)
+
+			// Property Attachments
+			mux.Post("/api/property-attachments", a.propertyAttach.Create)
+			mux.Get("/api/property-attachments", a.propertyAttach.FindAll)
+			mux.Get("/api/property-attachments/{id}", a.propertyAttach.Find)
+			mux.Put("/api/property-attachments/{id}", a.propertyAttach.Update)
+			mux.Delete("/api/property-attachments/{id}", a.propertyAttach.Delete)
+			// Attachment upload
+			mux.Post("/api/property-attach/{propertyId}", a.propertyAttach.Upload)
 
 			// Property features
 			mux.Post("/api/features", a.feature.Create)

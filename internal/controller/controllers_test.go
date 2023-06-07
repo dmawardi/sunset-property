@@ -27,7 +27,8 @@ var testConnection TestDbRepo
 var app config.AppConfig
 
 type TestDbRepo struct {
-	dbClient            *gorm.DB
+	dbClient *gorm.DB
+	// DB models
 	users               userDB
 	properties          propertyDB
 	features            featureDB
@@ -39,6 +40,7 @@ type TestDbRepo struct {
 	maintenanceRequests maintenanceRequestDB
 	workTypes           workTypeDB
 	vendors             vendorDB
+	propertyAttachments propertyAttachmentDB
 	router              http.Handler
 	// For authentication mocking
 	accounts userAccounts
@@ -57,6 +59,11 @@ type propertyDB struct {
 	created []db.Property
 }
 
+type propertyAttachmentDB struct {
+	repo repository.PropertyAttachmentRepository
+	serv service.PropertyAttachmentService
+	cont controller.PropertyAttachmentController
+}
 type contactDB struct {
 	repo repository.ContactRepository
 	serv service.ContactService
@@ -165,6 +172,7 @@ func (t TestDbRepo) buildAPI() http.Handler {
 		t.maintenanceRequests.cont,
 		t.workTypes.cont,
 		t.vendors.cont,
+		t.propertyAttachments.cont,
 	)
 	// Extract handlers from api
 	handler := api.Routes()
@@ -208,6 +216,10 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.properties.repo = repository.NewPropertyRepository(t.dbClient)
 	t.properties.serv = service.NewPropertyService(t.properties.repo)
 	t.properties.cont = controller.NewPropertyController(t.properties.serv, t.propertyLogs.serv)
+	// Propety Attachments
+	t.propertyAttachments.repo = repository.NewPropertyAttachmentRepository(t.dbClient)
+	t.propertyAttachments.serv = service.NewPropertyAttachmentService(t.propertyAttachments.repo, mockObjectStorage{})
+	t.propertyAttachments.cont = controller.NewPropertyAttachmentController(t.propertyAttachments.serv, t.properties.serv)
 	// Property Features
 	t.features.repo = repository.NewFeatureRepository(t.dbClient)
 	t.features.serv = service.NewFeatureService(t.features.repo)
@@ -265,6 +277,19 @@ func setupDatabase() *gorm.DB {
 	}
 
 	return dbClient
+}
+
+// Setup mock object storage
+func setupMockObjectStorage() {
+	// Create a new mock client
+}
+
+// Build Mock s3 storage
+type mockObjectStorage struct {
+}
+
+func (m mockObjectStorage) UploadFile(filePath string, keyPath string, isPublic bool) (string, int64, error) {
+	return "7d219e22bacfe3a56f5db68a58750361", 2429148, nil
 }
 
 // Setup enforcer and sync app state

@@ -49,8 +49,9 @@ type Property struct {
 	Transactions []Transaction `json:"transactions" gorm:"foreignKey:PropertyID"`
 
 	// Many to many
-	Features []Feature `json:"features" gorm:"many2many:prop_features"`
-	Contacts []Contact `json:"contacts" gorm:"many2many:contact_properties"`
+	Features    []Feature            `json:"features" gorm:"many2many:prop_features"`
+	Contacts    []Contact            `json:"contacts" gorm:"many2many:contact_properties"`
+	Attachments []PropertyAttachment `json:"attachments" gorm:"foreignKey:PropertyID"`
 }
 
 type Feature struct {
@@ -62,19 +63,35 @@ type Feature struct {
 	Properties   []Property     `json:"properties" gorm:"many2many:prop_features"`
 }
 
+type PropertyAttachment struct {
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
+	DeletedAt gorm.DeletedAt `json:"deleted_at,omitempty" gorm:"index"`
+	Label     string         `json:"label,omitempty"`
+	FileName  string         `json:"file_name,omitempty"`
+	FileSize  int64          `json:"file_size,omitempty"`
+	FileType  string         `json:"file_type,omitempty"`
+	ETag      string         `json:"etag,omitempty"`
+	ObjectKey string         `json:"object_key,omitempty"`
+	// Use PropertyID as foreign key and Property as object for relationship data
+	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
+	Property   Property `json:"property,omitempty" gorm:"not null;foreignKey:PropertyID"`
+}
+
 type PropertyLog struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	ID        uint           `json:"id,omitempty" gorm:"primaryKey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	// Use UserID as foreign key and User as object for relationship data
-	UserID     uint   `json:"user_id"`
-	User       User   `json:"user" gorm:"not null;foreignKey:UserID"`
-	LogMessage string `json:"log_message" gorm:"not null"`
-	Type       string `json:"type" gorm:"not null;enum:INPUT,GEN"`
+	UserID     uint   `json:"user_id,omitempty"`
+	User       User   `json:"user,omitempty" gorm:"not null;foreignKey:UserID"`
+	LogMessage string `json:"log_message,omitempty" gorm:"not null"`
+	Type       string `json:"type,omitempty" gorm:"not null;enum:INPUT,GEN"`
 	// Use PropertyID as foreign key and Property as object for relationship data
-	PropertyID uint     `json:"property_id" gorm:"not null"`
-	Property   Property `json:"property" gorm:"not null;foreignKey:PropertyID"`
+	PropertyID uint     `json:"property_id,omitempty" gorm:"not null"`
+	Property   Property `json:"property,omitempty" gorm:"not null;foreignKey:PropertyID"`
 }
 
 // Contacts

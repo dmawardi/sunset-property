@@ -198,4 +198,32 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/vendors", action: "delete",
 	},
+
+	// api/property-attachments
+	// admin
+	{
+		subject: "admin", object: "/api/property-attachments", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/property-attachments", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/property-attachments", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/property-attachments", action: "delete",
+	},
+	// Attach to property
+	{
+		subject: "admin", object: "/api/property-attach", action: "create",
+	},
+	{
+		subject: "admin", object: "/api/property-attach", action: "read",
+	},
+	{
+		subject: "admin", object: "/api/property-attach", action: "update",
+	},
+	{
+		subject: "admin", object: "/api/property-attach", action: "delete",
+	},
 }
