@@ -94,6 +94,8 @@ func (a api) Routes() http.Handler {
 			mux.Get("/api/property-attachments/{id}", a.propertyAttach.Find)
 			mux.Put("/api/property-attachments/{id}", a.propertyAttach.Update)
 			mux.Delete("/api/property-attachments/{id}", a.propertyAttach.Delete)
+			// Attachment download
+			mux.Get("/api/property-attach/{id}", a.propertyAttach.Download)
 			// Attachment upload
 			mux.Post("/api/property-attach/{propertyId}", a.propertyAttach.Upload)
 

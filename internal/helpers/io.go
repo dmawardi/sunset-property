@@ -25,7 +25,7 @@ func ExtractFileFromResponse(r *http.Request) (multipart.File, *multipart.FileHe
 	return file, handler, nil
 }
 
-// Saves a copy of parameter file on the server. Takes parameters from request parsing and filepath to save to (eg. ./temp/)
+// Saves a copy of parameter file on the server. Takes parameters from request parsing and filepath to save to (eg. ./tmp/)
 func SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileHeader, filePath string) error {
 
 	// Create a new file on the server to save the parameter file using the filename from the handler
@@ -56,11 +56,20 @@ func SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileH
 	return nil
 }
 
-// Deletes a file from the server
-func DeleteFile(filename string) error {
-	err := os.Remove(filename)
+// Deletes a file from the server based on the filepath
+func DeleteFile(filePath string) error {
+	err := os.Remove(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to delete file: %s", err)
 	}
 	return nil
+}
+
+// Reads a file from the server based on the filepath
+func ReadFile(filePath string) (*os.File, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %s", err)
+	}
+	return file, nil
 }

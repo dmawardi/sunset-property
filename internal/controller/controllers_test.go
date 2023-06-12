@@ -280,16 +280,21 @@ func setupDatabase() *gorm.DB {
 }
 
 // Setup mock object storage
-func setupMockObjectStorage() {
+func setupMockObjectStorage() db.ObjectRepository {
 	// Create a new mock client
+	return mockObjectStorage{}
 }
 
 // Build Mock s3 storage
 type mockObjectStorage struct {
 }
 
-func (m mockObjectStorage) UploadFile(filePath string, keyPath string, isPublic bool) (string, int64, error) {
-	return "7d219e22bacfe3a56f5db68a58750361", 2429148, nil
+func (m mockObjectStorage) UploadFile(filePath string, keyPath string, isPublic bool) (string, string, int64, error) {
+	return "properties/1/attachments/apricot.jpg", "7d219e22bacfe3a56f5db68a58750361", 2429148, nil
+}
+
+func (m mockObjectStorage) DownloadTempFile(objectKeyPath, fileName string) (string, error) {
+	return "./tmp/apricot.jpg", nil
 }
 
 // Setup enforcer and sync app state

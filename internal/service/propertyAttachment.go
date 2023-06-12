@@ -15,9 +15,12 @@ type PropertyAttachmentService interface {
 	FindAll(int, int, string) (*[]db.PropertyAttachment, error)
 	FindById(int) (*db.PropertyAttachment, error)
 	Create(*models.CreatePropertyAttachment) (*db.PropertyAttachment, error)
-	AttachToProperty(propertyId uint, userUpload *http.Request) (*db.PropertyAttachment, error)
 	Update(int, *models.UpdatePropertyAttachment) (*db.PropertyAttachment, error)
 	Delete(int) error
+	// Creates a property attachment in the database
+	AttachToProperty(propertyId uint, userUpload *http.Request) (*db.PropertyAttachment, error)
+	// Download property attachment from object storage and save it to tmp folder
+	DownloadPropertyAttachment(int) (string, error)
 }
 
 type propertyAttachmentService struct {
@@ -40,22 +43,22 @@ func (s *propertyAttachmentService) AttachToProperty(propertyId uint, r *http.Re
 	}
 
 	// Save a copy of the file on the server
-	err = helpers.SaveACopyOfTheFileOnTheServer(file, handler, "./temp")
+	err = helpers.SaveACopyOfTheFileOnTheServer(file, handler, "./tmp/")
 	if err != nil {
 		fmt.Println("error in saving a copy of the file on the server: ", err)
 		return nil, fmt.Errorf(`failed saving a copy of the file on the server: %w`, err)
 	}
-
+	fmt.Println("Successful up to this point")
 	// Build the required details for saving
 	fileName := handler.Filename
 	fileExtension := strings.Split(fileName, ".")[1]
-	tempFilePath := "./temp/" + fileName
+	tempFilePath := "./tmp/" + fileName
 
 	// Build file key path based on prop attachment requirements
 	fileKeyPath := fmt.Sprintf("property/%v/attachments/%s", propertyId, fileName)
 
-	// Upload file to object storage
-	eTag, fileSize, err := s.objectStorage.UploadFile(tempFilePath, fileKeyPath, false)
+	// Upload file to object storage. Grab variables and update file key path
+	fileKeyPath, eTag, fileSize, err := s.objectStorage.UploadFile(tempFilePath, fileKeyPath, false)
 	if err != nil {
 		fmt.Println("error in uploading file to object storage: ", err)
 		return nil, fmt.Errorf(`failed uploading file to object storage: %w`, err)
@@ -82,14 +85,31 @@ func (s *propertyAttachmentService) AttachToProperty(propertyId uint, r *http.Re
 		return nil, fmt.Errorf("failed creating property attachment: %w", err)
 	}
 
-	// Delete temp file
+	// Delete tmp file
 	err = helpers.DeleteFile(tempFilePath)
 	if err != nil {
-		fmt.Println("error in deleting temp file: ", err)
-		return nil, fmt.Errorf(`failed deleting temp file: %w`, err)
+		fmt.Println("error in deleting tmp file: ", err)
+		return nil, fmt.Errorf(`failed deleting tmp file: %w`, err)
 	}
 
 	return createdAttachment, nil
+}
+
+// Download property attachment from object storage and save it to tmp folder
+func (s *propertyAttachmentService) DownloadPropertyAttachment(id int) (filePath string, err error) {
+	// Find attachment by id
+	attachment, err := s.repo.FindById(id)
+	if err != nil {
+		return "", err
+	}
+	// Download file from object storage
+	downloadedFilePath, err := s.objectStorage.DownloadTempFile(attachment.ObjectKey, attachment.FileName)
+	if err != nil {
+		fmt.Println("error in downloading file from object storage: ", err)
+		return "", fmt.Errorf(`failed downloading file from object storage: %w`, err)
+	}
+
+	return downloadedFilePath, nil
 }
 
 // Creates a property attachment

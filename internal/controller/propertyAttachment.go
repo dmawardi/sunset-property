@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -14,6 +15,7 @@ import (
 
 type PropertyAttachmentController interface {
 	Upload(w http.ResponseWriter, r *http.Request)
+	Download(w http.ResponseWriter, r *http.Request)
 	// HandleUpload(w http.ResponseWriter, r *http.Request)
 	FindAll(w http.ResponseWriter, r *http.Request)
 	Find(w http.ResponseWriter, r *http.Request)
@@ -73,6 +75,45 @@ func (c propertyAttachmentController) Upload(w http.ResponseWriter, r *http.Requ
 	w.WriteHeader(http.StatusCreated)
 	// Send user success message in body
 	w.Write([]byte("Property attachment upload successful!"))
+}
+
+func (c propertyAttachmentController) Download(w http.ResponseWriter, r *http.Request) {
+	// Grab URL parameter
+	stringParameter := chi.URLParam(r, "id")
+	// Convert to int
+	idParameter, err := strconv.Atoi(stringParameter)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	// Query database for property attachment using ID and download if found
+	downloadedFilePath, err := c.service.DownloadPropertyAttachment(idParameter)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Can't find property attachment with ID: %v\n", idParameter), http.StatusBadRequest)
+		return
+	}
+	// read downloaded file
+	file, err := helpers.ReadFile(downloadedFilePath)
+	if err != nil {
+		http.Error(w, "Failed to download file", http.StatusInternalServerError)
+		return
+	}
+	// Copy the file contents to the response writer
+	_, err = io.Copy(w, file)
+	if err != nil {
+		http.Error(w, "Failed to download file", http.StatusInternalServerError)
+		return
+	}
+	// Set status to OK
+	w.WriteHeader(http.StatusOK)
+
+	// Delete the file from the server
+	err = helpers.DeleteFile(downloadedFilePath)
+	if err != nil {
+		fmt.Printf("Error deleting temporary file: %v\n", err)
+		return
+	}
+
 }
 
 // func (c propertyAttachmentController) HandleUpload(w http.ResponseWriter, r *http.Request) {

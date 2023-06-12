@@ -220,10 +220,10 @@ var DefaultPolicyList = []policySet{
 	{
 		subject: "admin", object: "/api/property-attach", action: "read",
 	},
-	{
-		subject: "admin", object: "/api/property-attach", action: "update",
-	},
-	{
-		subject: "admin", object: "/api/property-attach", action: "delete",
-	},
+	// {
+	// 	subject: "admin", object: "/api/property-attach", action: "update",
+	// },
+	// {
+	// 	subject: "admin", object: "/api/property-attach", action: "delete",
+	// },
 }
