@@ -3,7 +3,6 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -27,13 +26,15 @@ type PropertyAttachmentController interface {
 type propertyAttachmentController struct {
 	service     service.PropertyAttachmentService
 	propService service.PropertyService
+	// Local storage service
+	ioService helpers.FileIO
 }
 
-func NewPropertyAttachmentController(service service.PropertyAttachmentService, propService service.PropertyService) PropertyAttachmentController {
-	return &propertyAttachmentController{service, propService}
+func NewPropertyAttachmentController(service service.PropertyAttachmentService, propService service.PropertyService, ioServ helpers.FileIO) PropertyAttachmentController {
+	return &propertyAttachmentController{service, propService, ioServ}
 }
 
-// API/PROPERTY-ATTACH/{propertyId}
+// API/PROPERTY-ATTACH
 // Attaches a file to a property
 // @Summary      Attaches a file to a property
 // @Description  Accepts a propertyId parameter and a file delivered by form-data with a key of "file"
@@ -44,7 +45,7 @@ func NewPropertyAttachmentController(service service.PropertyAttachmentService, 
 // @Success      200 {object} string "Property attachment upload successful!"
 // @Failure      400 {string} string "Can't find property with ID: {id}"
 // @Failure      400 {string} string "Invalid property ID"
-// @Router       /property-attach [post]
+// @Router       /property-attach/propertyId [post]
 // @Security BearerToken
 func (c propertyAttachmentController) Upload(w http.ResponseWriter, r *http.Request) {
 	// Grab URL parameter
@@ -67,7 +68,7 @@ func (c propertyAttachmentController) Upload(w http.ResponseWriter, r *http.Requ
 
 	if createErr != nil {
 		fmt.Printf("Issue with prop attachment creation: %v\n", createErr)
-		http.Error(w, "Property attachment creation failed.", http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Property attachment creation failed: %s.", createErr), http.StatusBadRequest)
 		return
 	}
 
@@ -77,6 +78,18 @@ func (c propertyAttachmentController) Upload(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte("Property attachment upload successful!"))
 }
 
+// Downloads a property file attachment
+// @Summary      Downloads a property file attachment
+// @Description  Accepts a property attachment id parameter
+// @Tags         Property Attachments
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "Property Attachment ID"
+// @Success 200 {file} file "Property Attachment file"
+// @Failure      400 {string} string "Can't find property with ID: {id}"
+// @Failure      400 {string} string "Invalid property ID"
+// @Router       /property-attach/id [get]
+// @Security BearerToken
 func (c propertyAttachmentController) Download(w http.ResponseWriter, r *http.Request) {
 	// Grab URL parameter
 	stringParameter := chi.URLParam(r, "id")
@@ -93,27 +106,26 @@ func (c propertyAttachmentController) Download(w http.ResponseWriter, r *http.Re
 		return
 	}
 	// read downloaded file
-	file, err := helpers.ReadFile(downloadedFilePath)
+	file, err := c.ioService.ReadFile(downloadedFilePath)
 	if err != nil {
-		http.Error(w, "Failed to download file", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprint("Failed to download file: ", err), http.StatusInternalServerError)
 		return
 	}
 	// Copy the file contents to the response writer
-	_, err = io.Copy(w, file)
+	_, err = c.ioService.Copy(w, file)
 	if err != nil {
-		http.Error(w, "Failed to download file", http.StatusInternalServerError)
+		http.Error(w, fmt.Sprint("Failed to copy download file: ", err), http.StatusInternalServerError)
 		return
 	}
 	// Set status to OK
 	w.WriteHeader(http.StatusOK)
 
 	// Delete the file from the server
-	err = helpers.DeleteFile(downloadedFilePath)
+	err = c.ioService.DeleteFile(downloadedFilePath)
 	if err != nil {
 		fmt.Printf("Error deleting temporary file: %v\n", err)
 		return
 	}
-
 }
 
 // func (c propertyAttachmentController) HandleUpload(w http.ResponseWriter, r *http.Request) {

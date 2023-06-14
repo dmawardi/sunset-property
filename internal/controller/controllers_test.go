@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"testing"
 
 	"github.com/dmawardi/Go-Template/internal/auth"
+	"github.com/dmawardi/Go-Template/internal/helpers"
 	"github.com/dmawardi/Go-Template/internal/routes"
 
 	"github.com/dmawardi/Go-Template/internal/config"
@@ -41,6 +45,7 @@ type TestDbRepo struct {
 	workTypes           workTypeDB
 	vendors             vendorDB
 	propertyAttachments propertyAttachmentDB
+	ioService           helpers.FileIO
 	router              http.Handler
 	// For authentication mocking
 	accounts userAccounts
@@ -204,6 +209,8 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	// Setup DB
 	t.dbClient = setupDatabase()
 	// Create test modules
+	// IO Service
+	t.ioService = NewMockFileIO()
 	// Users
 	t.users.repo = repository.NewUserRepository(t.dbClient)
 	t.users.serv = service.NewUserService(t.users.repo)
@@ -218,8 +225,8 @@ func (t *TestDbRepo) setupDBAuthAppModels() {
 	t.properties.cont = controller.NewPropertyController(t.properties.serv, t.propertyLogs.serv)
 	// Propety Attachments
 	t.propertyAttachments.repo = repository.NewPropertyAttachmentRepository(t.dbClient)
-	t.propertyAttachments.serv = service.NewPropertyAttachmentService(t.propertyAttachments.repo, mockObjectStorage{})
-	t.propertyAttachments.cont = controller.NewPropertyAttachmentController(t.propertyAttachments.serv, t.properties.serv)
+	t.propertyAttachments.serv = service.NewPropertyAttachmentService(t.propertyAttachments.repo, mockObjectStorage{}, t.ioService)
+	t.propertyAttachments.cont = controller.NewPropertyAttachmentController(t.propertyAttachments.serv, t.properties.serv, t.ioService)
 	// Property Features
 	t.features.repo = repository.NewFeatureRepository(t.dbClient)
 	t.features.serv = service.NewFeatureService(t.features.repo)
@@ -272,7 +279,7 @@ func setupDatabase() *gorm.DB {
 	}
 
 	// Migrate the database schema
-	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}, db.WorkType{}, db.Vendor{}); err != nil {
+	if err := dbClient.AutoMigrate(&db.User{}, &db.Property{}, &db.PropertyAttachment{}, &db.Feature{}, &db.PropertyLog{}, &db.Contact{}, &db.Task{}, &db.TaskLog{}, &db.Transaction{}, db.MaintenanceRequest{}, db.WorkType{}, db.Vendor{}); err != nil {
 		fmt.Errorf("failed to migrate database schema: %v", err)
 	}
 
@@ -295,6 +302,35 @@ func (m mockObjectStorage) UploadFile(filePath string, keyPath string, isPublic 
 
 func (m mockObjectStorage) DownloadTempFile(objectKeyPath, fileName string) (string, error) {
 	return "./tmp/apricot.jpg", nil
+}
+
+// Setup mock file io
+type mockFileIO struct {
+}
+
+func NewMockFileIO() helpers.FileIO {
+	return mockFileIO{}
+}
+
+func (m mockFileIO) ReadFile(filePath string) (*os.File, error) {
+	// Create a temporary file
+	tempFile, err := ioutil.TempFile("", "example")
+	if err != nil {
+		return nil, err
+	}
+
+	return tempFile, nil
+}
+
+func (m mockFileIO) DeleteFile(filePath string) error {
+	return nil
+}
+func (m mockFileIO) SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileHeader, filePath string) error {
+	return nil
+}
+
+func (m mockFileIO) Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+	return 1024, nil
 }
 
 // Setup enforcer and sync app state

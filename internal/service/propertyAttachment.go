@@ -26,10 +26,12 @@ type PropertyAttachmentService interface {
 type propertyAttachmentService struct {
 	repo          repository.PropertyAttachmentRepository
 	objectStorage db.ObjectRepository
+	// Local storage service
+	ioService helpers.FileIO
 }
 
-func NewPropertyAttachmentService(repo repository.PropertyAttachmentRepository, objStorage db.ObjectRepository) PropertyAttachmentService {
-	return &propertyAttachmentService{repo, objStorage}
+func NewPropertyAttachmentService(repo repository.PropertyAttachmentRepository, objStorage db.ObjectRepository, ioServ helpers.FileIO) PropertyAttachmentService {
+	return &propertyAttachmentService{repo, objStorage, ioServ}
 }
 
 // Creates a property attachment in the database
@@ -43,7 +45,8 @@ func (s *propertyAttachmentService) AttachToProperty(propertyId uint, r *http.Re
 	}
 
 	// Save a copy of the file on the server
-	err = helpers.SaveACopyOfTheFileOnTheServer(file, handler, "./tmp/")
+
+	err = s.ioService.SaveACopyOfTheFileOnTheServer(file, handler, "./tmp/")
 	if err != nil {
 		fmt.Println("error in saving a copy of the file on the server: ", err)
 		return nil, fmt.Errorf(`failed saving a copy of the file on the server: %w`, err)
@@ -86,7 +89,7 @@ func (s *propertyAttachmentService) AttachToProperty(propertyId uint, r *http.Re
 	}
 
 	// Delete tmp file
-	err = helpers.DeleteFile(tempFilePath)
+	err = s.ioService.DeleteFile(tempFilePath)
 	if err != nil {
 		fmt.Println("error in deleting tmp file: ", err)
 		return nil, fmt.Errorf(`failed deleting tmp file: %w`, err)

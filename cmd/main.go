@@ -14,6 +14,7 @@ import (
 	"github.com/dmawardi/Go-Template/internal/config"
 	"github.com/dmawardi/Go-Template/internal/controller"
 	"github.com/dmawardi/Go-Template/internal/db"
+	"github.com/dmawardi/Go-Template/internal/helpers"
 	"github.com/dmawardi/Go-Template/internal/repository"
 	"github.com/dmawardi/Go-Template/internal/routes"
 	"github.com/dmawardi/Go-Template/internal/service"
@@ -95,6 +96,9 @@ func main() {
 }
 
 func ApiSetup(client *gorm.DB) routes.Api {
+	// IO service
+	ioService := helpers.NewFileIO()
+
 	// user
 	userRepo := repository.NewUserRepository(client)
 	userService := service.NewUserService(userRepo)
@@ -113,8 +117,8 @@ func ApiSetup(client *gorm.DB) routes.Api {
 	// property attach
 	objectService := db.NewObjectService()
 	propAttachRepo := repository.NewPropertyAttachmentRepository(client)
-	propAttachService := service.NewPropertyAttachmentService(propAttachRepo, objectService)
-	propAttachController := controller.NewPropertyAttachmentController(propAttachService, propService)
+	propAttachService := service.NewPropertyAttachmentService(propAttachRepo, objectService, ioService)
+	propAttachController := controller.NewPropertyAttachmentController(propAttachService, propService, ioService)
 
 	// feature
 	featRepo := repository.NewFeatureRepository(client)

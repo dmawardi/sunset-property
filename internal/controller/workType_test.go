@@ -348,7 +348,7 @@ func TestWorkTypeController_Create(t *testing.T) {
 		}, http.StatusBadRequest, testConnection.accounts.admin.token, "invalid name length create"},
 	}
 
-	// Create a request url with an "id" URL parameter
+	// Create a request url
 	requestUrl := "/api/work-types"
 
 	for _, v := range createTests {

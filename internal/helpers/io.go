@@ -25,8 +25,23 @@ func ExtractFileFromResponse(r *http.Request) (multipart.File, *multipart.FileHe
 	return file, handler, nil
 }
 
+// Interface for fileIO
+type FileIO interface {
+	SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileHeader, filePath string) error
+	DeleteFile(filePath string) error
+	ReadFile(filePath string) (*os.File, error)
+	// Emulates the io.Copy function
+	Copy(dst io.Writer, src io.Reader) (written int64, err error)
+}
+
+type fileIO struct{}
+
+func NewFileIO() FileIO {
+	return &fileIO{}
+}
+
 // Saves a copy of parameter file on the server. Takes parameters from request parsing and filepath to save to (eg. ./tmp/)
-func SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileHeader, filePath string) error {
+func (f fileIO) SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileHeader, filePath string) error {
 
 	// Create a new file on the server to save the parameter file using the filename from the handler
 	createdFile, err := os.Create(filePath + handler.Filename)
@@ -57,7 +72,7 @@ func SaveACopyOfTheFileOnTheServer(file multipart.File, handler *multipart.FileH
 }
 
 // Deletes a file from the server based on the filepath
-func DeleteFile(filePath string) error {
+func (f fileIO) DeleteFile(filePath string) error {
 	err := os.Remove(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to delete file: %s", err)
@@ -66,10 +81,14 @@ func DeleteFile(filePath string) error {
 }
 
 // Reads a file from the server based on the filepath
-func ReadFile(filePath string) (*os.File, error) {
+func (f fileIO) ReadFile(filePath string) (*os.File, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %s", err)
 	}
 	return file, nil
+}
+
+func (f fileIO) Copy(dst io.Writer, src io.Reader) (written int64, err error) {
+	return io.Copy(dst, src)
 }
