@@ -128,25 +128,6 @@ func (c propertyAttachmentController) Download(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// func (c propertyAttachmentController) HandleUpload(w http.ResponseWriter, r *http.Request) {
-// 	// Get the file from the request
-// 	file, handler, err := helpers.ExtractFileFromResponse(r)
-// 	if err != nil {
-// 		http.Error(w, "Failed to extract file content", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	// Save a temporary copy of the file in temp folder
-// 	err = helpers.SaveACopyOfTheFileOnTheServer(file, handler, "./temp/")
-// 	if err != nil {
-// 		fmt.Printf("Error saving file: %v\n", err)
-// 		http.Error(w, "Failed to save file", http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	fmt.Fprintf(w, "File uploaded successfully!")
-// }
-
 // API/PROPERTY-ATTACHMENTS
 // Find a list of Property attachments
 // @Summary      Find a list of property attachments
